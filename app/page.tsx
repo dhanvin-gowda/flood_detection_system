@@ -1,12 +1,9 @@
-'use client'
+﻿'use client'
 import React, { useState, useRef } from 'react';
 import './globals.css';
 import { FloodMap } from './map';
 import type { FloodMapHandle, FloodLayerKey } from './map';
 
-/* ============================================================================
-   ICONS — small inline SVGs, no external icon library required
-   ============================================================================ */
 type IconProps = { size?: number };
 
 const IconWave = ({ size = 15 }: IconProps) => (
@@ -140,9 +137,6 @@ const IconMap = ({ size = 28 }: IconProps) => (
     </svg>
 );
 
-/* ============================================================================
-   TOP NAVBAR
-   ============================================================================ */
 export const TopNavbar: React.FC = () => {
     return (
         <header className="fs-navbar">
@@ -175,9 +169,6 @@ export const TopNavbar: React.FC = () => {
     );
 };
 
-/* ============================================================================
-   LEFT SIDEBAR — ANALYSIS SIDEBAR
-   ============================================================================ */
 const PIPELINE_STEPS = [
     'Satellite data found',
     'Before / after imagery',
@@ -297,13 +288,6 @@ export const AnalysisSidebar: React.FC = () => {
     );
 };
 
-/* ============================================================================
-   CENTER WORKSPACE — MAP PLACEHOLDER
-   Only the dashboard chrome is rendered. The central canvas itself stays an
-   empty, dark, reserved region — no basemap, terrain, markers or mapping
-   library are rendered here. It is isolated and ready for a MapLibre GL JS
-   instance to be mounted into it later.
-   ============================================================================ */
 export const MapPlaceholder: React.FC = () => {
     const [settlementOpen, setSettlementOpen] = useState(true);
     const [activeView, setActiveView] = useState<'before' | 'flood' | 'after'>('flood');
@@ -322,8 +306,6 @@ export const MapPlaceholder: React.FC = () => {
         setLayerVisibility((prev) => ({ ...prev, [id]: !prev[id] }));
     };
 
-    // 'Buildings' and 'Connectivity' have no sample data yet, so their toggles
-    // stay visible but disabled rather than wired to a layer that doesn't exist.
     const layers: Array<{
         id: FloodLayerKey | 'buildings' | 'connectivity';
         label: string;
@@ -341,12 +323,9 @@ export const MapPlaceholder: React.FC = () => {
 
     return (
         <section className="fs-map-wrap">
-            {/* Functional MapLibre map. All floating dashboard chrome below is
-          layered on top of it, unchanged. */}
-            <FloodMap ref={mapRef} visibleLayers={layerVisibility} />
+                        <FloodMap ref={mapRef} visibleLayers={layerVisibility} />
 
-            {/* Top overlay: location + flood status */}
-            <div className="fs-map-topbar">
+                        <div className="fs-map-topbar">
                 <div className="fs-location-chip">
                     <div className="fs-location-chip__title">
                         <IconPin />
@@ -367,8 +346,7 @@ export const MapPlaceholder: React.FC = () => {
                 <IconChevronDown size={12} />
             </div>
 
-            {/* Settlement intelligence popup — illustrative sample content only */}
-            {settlementOpen && (
+                        {settlementOpen && (
                 <div className="fs-settlement-card">
                     <div className="fs-settlement-card__header">
                         <span className="fs-settlement-card__kicker">SETTLEMENT INTELLIGENCE</span>
@@ -411,8 +389,7 @@ export const MapPlaceholder: React.FC = () => {
                 </div>
             )}
 
-            {/* Zoom / tool controls — wired to the FloodMap instance via ref */}
-            <div className="fs-map-controls">
+                        <div className="fs-map-controls">
                 <button className="fs-map-controls__btn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
                     <IconPlus />
                 </button>
@@ -431,8 +408,7 @@ export const MapPlaceholder: React.FC = () => {
                 </button>
             </div>
 
-            {/* Layers panel — doubles as the map legend and drives FloodMap's layer visibility */}
-            <div className="fs-layers-panel">
+                        <div className="fs-layers-panel">
                 <div className="fs-layers-panel__header">
                     <IconLayers />
                     LAYERS
@@ -456,8 +432,7 @@ export const MapPlaceholder: React.FC = () => {
                 ))}
             </div>
 
-            {/* Bottom toolbar: scale, attribution, before/flood/after toggle, opacity */}
-            <div className="fs-map-bottombar">
+                        <div className="fs-map-bottombar">
                 <div className="fs-map-bottombar__left">
                     <div className="fs-scale-bar">
                         <span className="fs-scale-bar__line" />
@@ -496,9 +471,6 @@ export const MapPlaceholder: React.FC = () => {
     );
 };
 
-/* ============================================================================
-   RIGHT SIDEBAR — INTELLIGENCE SIDEBAR
-   ============================================================================ */
 export const IntelligenceSidebar: React.FC = () => {
     const [lang, setLang] = useState<'en' | 'np'>('en');
 
@@ -596,9 +568,6 @@ export const IntelligenceSidebar: React.FC = () => {
     );
 };
 
-/* ============================================================================
-   BOTTOM — IMPACT SUMMARY
-   ============================================================================ */
 const IMPACT_STATS: Array<{
     label: string;
     value: string;
@@ -638,9 +607,6 @@ export const ImpactSummary: React.FC = () => {
     );
 };
 
-/* ============================================================================
-   DASHBOARD LAYOUT — top-level composition
-   ============================================================================ */
 export const DashboardLayout: React.FC = () => {
     return (
         <div className="fs-dashboard">

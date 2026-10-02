@@ -761,9 +761,14 @@ input {
 }
 
 /* Layers panel */
+/* Sits below the control stack on the same edge. The five-button column
+   measures 14 + (5 x 32) + (4 x 1px gaps) + 2px border = 180px, so the panel
+   starts at 186px. It previously started at 58px, which put it on top of the
+   World view and Recenter buttons — clicks at their centres landed on the layer
+   rows underneath instead, so those buttons did nothing. */
 .fs-layers-panel {
   position: absolute;
-  top: 58px;
+  top: 186px;
   right: 14px;
   width: 168px;
   z-index: 5;
@@ -1281,4 +1286,140 @@ input {
   color: var(--text-tertiary);
   border-top: 1px solid var(--border-subtle);
   padding-top: 6px;
+}
+
+/* ------------------------------------------------------------------------
+   MapLibre attribution control — MapTiler and OpenStreetMap both require
+   visible credit, so the control is enabled in code (map.tsx). It would
+   otherwise render underneath .fs-map-bottombar, which spans the full
+   width at z-index 5, so lift it clear of that bar and theme it dark.
+   ------------------------------------------------------------------------ */
+.maplibregl-ctrl-attrib {
+  background: rgba(13, 17, 23, 0.85) !important;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  margin: 0 14px 62px 0;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--text-secondary);
+}
+/* ------------------------------------------------------------------------
+   Global map view
+   ------------------------------------------------------------------------
+   The flood extent now starts hidden, so the status chip reads as an
+   available-but-off layer rather than a live detection. Muted styling makes
+   that legible without hiding the information entirely.
+   ------------------------------------------------------------------------ */
+.fs-flood-alert--muted {
+  background: var(--bg-panel);
+  border-color: var(--border-default);
+  color: var(--text-secondary);
+}
+
+.fs-flood-alert--muted .fs-dot {
+  background: var(--text-tertiary);
+}
+
+/* Place search. Sits top-centre over the map canvas, clear of the location
+   chip on the left and the zoom controls on the right. */
+.fs-search {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: 240px;
+}
+
+.fs-search__box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: border-color 120ms ease;
+}
+
+.fs-search__box:focus-within {
+  border-color: var(--blue);
+  color: var(--text-secondary);
+}
+
+.fs-search__box input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+}
+
+.fs-search__box input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.fs-search__spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--border-default);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: fs-search-spin 700ms linear infinite;
+}
+
+@keyframes fs-search-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-search__spinner { animation: none; }
+}
+
+.fs-search__results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.fs-search__results button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.fs-search__results button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.fs-search__results svg {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
 }

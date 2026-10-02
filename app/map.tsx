@@ -9,13 +9,8 @@ import React, {
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { GeocodingControl } from '@maptiler/geocoding-control/maplibregl';
-import '@maptiler/geocoding-control/style.css';
 
-/* ============================================================================
-   CONFIG
-   Basemap provider selection: MapTiler (hybrid) → Mapbox (satellite-streets) → Carto (free fallback).
-   Keys are read from NEXT_PUBLIC_ env vars at build time.
-   ============================================================================ */
+
 export const DEFAULT_STYLE_URL: string = (() => {
     const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
     if (maptilerKey) {
@@ -28,30 +23,16 @@ export const DEFAULT_STYLE_URL: string = (() => {
     return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 })();
 
-// Karnali River Basin, Nepal — matches the AOI shown in the sidebar.
 const INITIAL_CENTER: [number, number] = [81.62, 29.03];
 const INITIAL_ZOOM = 10.2;
 
-/* ============================================================================
-   SAMPLE DATA MODULE — ILLUSTRATIVE ONLY
-   ----------------------------------------------------------------------------
-   Every FeatureCollection below is hand-authored placeholder geometry for
-   demonstrating the map layers. None of it is a real flood prediction,
-   verified road/bridge impact, or confirmed settlement status. Replace each
-   constant with real geospatial data (e.g. from a GeoJSON API response or a
-   vector tile source) in Phase 3 — the rest of FloodMap does not need to
-   change to accept that swap, since it only expects a standard GeoJSON
-   FeatureCollection at each source.
-   ============================================================================ */
-
-// Minimal local GeoJSON typing so this file has no dependency on @types/geojson.
 type GeoJSONGeometry = { type: string; coordinates: unknown };
 type GeoJSONFeature = {
     type: 'Feature';
     properties: Record<string, unknown>;
     geometry: GeoJSONGeometry;
 };
-type GeoJSONData = { type: string; features: GeoJSONFeature[] };
+type GeoJSONData = any;
 export type FeatureCollection = {
     type: 'FeatureCollection';
     features: GeoJSONFeature[];
@@ -175,13 +156,8 @@ export const SAMPLE_SETTLEMENTS: FeatureCollection = {
     })),
 };
 
-/* ============================================================================
-   LAYER CONFIG
-   ============================================================================ */
 export type FloodLayerKey = 'flood' | 'roads' | 'bridges' | 'hospitals' | 'settlements';
 
-// Maps a layer key to every MapLibre layer id that belongs to it, so a single
-// toggle can show/hide a fill + outline, or a point + label, together.
 const LAYER_IDS: Record<FloodLayerKey, string[]> = {
     flood: ['flood-extent-fill', 'flood-extent-outline'],
     roads: ['roads-line'],
@@ -192,9 +168,6 @@ const LAYER_IDS: Record<FloodLayerKey, string[]> = {
 
 const INTERACTIVE_LAYER_IDS = ['bridges-point', 'hospitals-point', 'settlements-point'];
 
-/* ============================================================================
-   POPUP CONTENT
-   ============================================================================ */
 function popupHTML(kicker: string, title: string, rows: Array<[string, string]>) {
     const rowsHTML = rows
         .map(
@@ -210,19 +183,10 @@ function popupHTML(kicker: string, title: string, rows: Array<[string, string]>)
   `;
 }
 
-/* ============================================================================
-   FLOOD MAP COMPONENT
-   ----------------------------------------------------------------------------
-   Self-contained: owns its own MapLibre instance, sample layers and popups.
-   It does not read from or write to the sidebar/report components — the
-   parent only passes which layers should be visible and gets back an
-   imperative handle for zoom / recenter / fullscreen / resize, so it can
-   stay wired to the dashboard's existing floating control buttons.
-   ============================================================================ */
 export interface FloodMapProps {
-    /** Swap the base map later without touching this component's logic. */
+
     styleUrl?: string;
-    /** Visibility for each layer that currently has sample data. */
+
     visibleLayers: Record<FloodLayerKey, boolean>;
     className?: string;
 }
@@ -250,7 +214,6 @@ function applyLayerVisibility(
 }
 
 function addSampleLayers(map: maplibregl.Map) {
-    // Flood extent — translucent red fill with a visible outline.
     map.addSource('flood-extent', { type: 'geojson', data: SAMPLE_FLOOD_EXTENT as GeoJSONData });
     map.addLayer({
         id: 'flood-extent-fill',
@@ -265,7 +228,6 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'line-color': '#ef5a5a', 'line-width': 2 },
     });
 
-    // Affected roads — orange lines.
     map.addSource('roads', { type: 'geojson', data: SAMPLE_ROADS as GeoJSONData });
     map.addLayer({
         id: 'roads-line',
@@ -275,7 +237,6 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'line-color': '#f0a23f', 'line-width': 3 },
     });
 
-    // Bridges — distinct point markers (blue, ringed).
     map.addSource('bridges', { type: 'geojson', data: SAMPLE_BRIDGES as GeoJSONData });
     map.addLayer({
         id: 'bridges-point',
@@ -289,7 +250,6 @@ function addSampleLayers(map: maplibregl.Map) {
         },
     });
 
-    // Hospitals — green point markers with a small "+" label.
     map.addSource('hospitals', { type: 'geojson', data: SAMPLE_HOSPITALS as GeoJSONData });
     map.addLayer({
         id: 'hospitals-point',
@@ -315,7 +275,6 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'text-color': '#06130d' },
     });
 
-    // Settlements — identifiable markers with clickable popups.
     map.addSource('settlements', { type: 'geojson', data: SAMPLE_SETTLEMENTS as GeoJSONData });
     map.addLayer({
         id: 'settlements-point',
@@ -410,8 +369,6 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
         const [loading, setLoading] = useState(true);
         const [loadError, setLoadError] = useState<string | null>(null);
 
-        // Keep the latest visibility in a ref so the 'load' handler (registered
-        // once) always applies the current toggle state, not a stale closure.
         useEffect(() => {
             visibleLayersRef.current = visibleLayers;
             const map = mapInstanceRef.current;
@@ -421,7 +378,9 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
         }, [visibleLayers]);
 
         useEffect(() => {
-            if (!containerRef.current || mapInstanceRef.current) return; // guard StrictMode double-invoke
+            if (!containerRef.current || mapInstanceRef.current) return;
+
+            maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
 
             const map = new maplibregl.Map({
                 container: containerRef.current,
@@ -433,16 +392,16 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
                 touchZoomRotate: true,
             });
             mapInstanceRef.current = map;
+            if (typeof window !== 'undefined') {
+                (window as unknown as { __fsMap?: maplibregl.Map }).__fsMap = map;
+            }
 
-            // Navigation control (zoom +/- buttons + compass) — top-right
             map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
 
-            // Geocoder / search box — powered by MapTiler geocoding API
             const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
             if (maptilerKey) {
                 const gc = new GeocodingControl({
                     apiKey: maptilerKey,
-                    maplibregl,
                     placeholder: 'Search places…',
                     collapsed: false,
                 });
@@ -473,11 +432,12 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
             return () => {
                 map.remove();
                 mapInstanceRef.current = null;
+                if (typeof window !== 'undefined') {
+                    delete (window as unknown as { __fsMap?: maplibregl.Map }).__fsMap;
+                }
             };
         }, [styleUrl]);
 
-        // Resize the map whenever its own container changes size (sidebar
-        // opening/closing, window resize, panel collapse, etc.).
         useEffect(() => {
             const el = containerRef.current;
             if (!el || typeof ResizeObserver === 'undefined') return;
