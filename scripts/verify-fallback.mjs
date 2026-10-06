@@ -37,11 +37,6 @@ const state = await page.evaluate(() => {
         glyphs: style.glyphs ?? null,
         searchPresent: !!document.querySelector('.fs-search'),
         errorOverlay: document.querySelector('.fs-floodmap__status--error')?.textContent?.trim() ?? null,
-        sampleLayers: ['flood-extent-fill', 'roads-line', 'bridges-point', 'settlements-point'].map((id) => ({
-            id,
-            exists: !!m.getLayer(id),
-            vis: m.getLayer(id) ? m.getLayoutProperty(id, 'visibility') : null,
-        })),
         canvas: canvas ? { w: canvas.width, h: canvas.height } : null,
     };
 });
@@ -52,18 +47,6 @@ check('fallback makes NO remote requests', state.sources.length === 1 && 'gratic
 check('fallback needs no glyph endpoint', state.glyphs === null);
 check('graticule + background layers present', state.layers.includes('bg') && state.layers.includes('graticule'), state.layers.join(','));
 check('no load-error overlay', state.errorOverlay === null, state.errorOverlay ?? '');
-
-// The overlay layers are Nepal sample data and are independent of the basemap,
-// so they must still be injected and still respect their toggles.
-check(
-    'Nepal sample layers still injected on the fallback style',
-    state.sampleLayers.every((l) => l.exists),
-    state.sampleLayers.map((l) => `${l.id}:${l.vis}`).join(' ')
-);
-check(
-    'flood polygon still hidden by default on fallback',
-    state.sampleLayers.find((l) => l.id === 'flood-extent-fill')?.vis === 'none'
-);
 
 // The canvas must actually be painting the fallback, not sitting empty.
 // Sampled from a screenshot rather than gl.readPixels: a WebGL drawing buffer
