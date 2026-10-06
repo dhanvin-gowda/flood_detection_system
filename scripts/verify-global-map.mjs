@@ -1,6 +1,6 @@
 // Verification probe. Renders the dashboard in headless Chrome, then exercises
-// the map: initial view, world-view button, HUD readout, flood-layer default,
-// crossfade, and a real geocoding search. Run with:
+// the map: initial view, world-view button, HUD readout, crossfade, and a real
+// geocoding search. Run with:
 //   node scripts/verify-global-map.mjs
 import puppeteer from 'puppeteer-core';
 
@@ -36,13 +36,13 @@ page.on('response', (r) => {
 
 await page.goto(URL, { waitUntil: 'networkidle2', timeout: 60000 });
 await page.waitForSelector('.fs-floodmap__canvas canvas', { timeout: 30000 });
-// Wait for the sample layers to exist, not just for the canvas. The map mounts
+// Wait for the style to be fully loaded, not just for the canvas. The map mounts
 // on 'load', and under StrictMode it is created, torn down and recreated, so
 // probing too early can catch a map that is about to be replaced.
 await page.waitForFunction(
     () => {
         const m = window.__fsMap;
-        return !!m && !!m.getLayer('flood-extent-fill') && m.isStyleLoaded();
+        return !!m && m.isStyleLoaded();
     },
     { timeout: 30000 }
 );
@@ -87,16 +87,7 @@ check('HUD zoom updates on map movement', before.zoom !== after.zoom, `"${before
 const scaleChanged = before.scale !== after.scale;
 check('HUD scale label updates too', scaleChanged, `"${before.scale}" -> "${after.scale}"`);
 
-// 5. Flood layer hidden by default, checkbox still available and toggleable.
-const floodDefault = await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('.fs-layer-row')];
-    const row = rows.find((r) => /Flood extent/.test(r.textContent || ''));
-    return { found: !!row, checked: row?.querySelector('input')?.checked ?? null };
-});
-check('flood extent layer hidden by default', floodDefault.found && floodDefault.checked === false, `checked=${floodDefault.checked}`);
-check('flood extent checkbox still present', floodDefault.found);
-
-// 6. World view flies out to a global framing, and is independent of recenter.
+// 5. World view flies out to a global framing, and is independent of recenter.
 //    Asserted against the map's own camera, not the HUD, so this measures the
 //    button's effect directly.
 await page.click('button[aria-label="World view"]');
@@ -129,7 +120,7 @@ check(
     `zoom=${recent.zoom.toFixed(2)} centre=${recent.lng.toFixed(2)},${recent.lat.toFixed(2)}`
 );
 
-// 7. Crossfade: the basemap must be ONE style whose paint properties are
+// 6. Crossfade: the basemap must be ONE style whose paint properties are
 //    zoom-interpolated, not two styles swapped at a threshold. Verified by
 //    reading the expressions off the live style.
 const crossfade = await page.evaluate(() => {
@@ -171,7 +162,7 @@ check(
 );
 // Land is the background, because the v3 schema has no land layer. If the
 // background is ever painted the ocean colour again, land and sea become the
-// same flat fill and only the sample points remain.
+// same flat fill and the world view shows no geography.
 check(
     'background is the land colour (not the ocean colour)',
     crossfade.bgColor === '#3a3f45',
@@ -183,7 +174,7 @@ check('place labels are NOT zoom-faded (constant colour)', crossfade.placeColor 
 // assertion that produced the blank-basemap regression.
 check('exactly one vector water layer, above the raster', crossfade.waterLayers === 1, `${crossfade.waterLayers} water layers`);
 
-// 7b. Rendered pixels, not style structure. Every assertion above reads the
+// 6b. Rendered pixels, not style structure. Every assertion above reads the
 //     style object, so it cannot tell "land is painted" apart from "nothing is
 //     painted but the background" — which is exactly how a style with a
 //     landcover fill and no land layer passed 26/26 while showing no geography.
@@ -322,8 +313,8 @@ check('ocean is distinguishable from land at world view', coverage.ocean > 0.3, 
 await page.evaluate(() => window.__fsMap.jumpTo({ center: [81.62, 29.03], zoom: 6 }));
 await waitIdle();
 
-// 8. Real geocoding search: type Paris, confirm results, pick one, confirm the
-//    map moves and the flood layer stays off.
+// 7. Real geocoding search: type Paris, confirm results, pick one, confirm the
+//    map moves.
 await page.click('.fs-search__box input');
 await page.type('.fs-search__box input', 'Paris', { delay: 40 });
 await page.waitForSelector('.fs-search__results button', { timeout: 15000 });
@@ -345,20 +336,14 @@ if (parisResults.length) {
         return {
             centre: [c.lng, c.lat],
             zoom: m.getZoom(),
-            floodVis: m.getLayoutProperty('flood-extent-fill', 'visibility'),
-            checkbox: [...document.querySelectorAll('.fs-layer-row')]
-                .find((r) => /Flood extent/.test(r.textContent || ''))
-                ?.querySelector('input')?.checked,
         };
     });
     // Paris is ~2.33E 48.86N; the AOI is 81.6E 29.0N. A real move is a large delta.
     const moved = Math.abs(afterPick.centre[0] - centrePre[0]) > 5;
     check('picking a search result moves the map to that place', moved, `centre ${centrePre.map((n) => n.toFixed(1))} -> ${afterPick.centre.map((n) => n.toFixed(1))}`);
-    check('search does NOT enable the flood polygon (map layer)', afterPick.floodVis === 'none', `visibility=${afterPick.floodVis}`);
-    check('search does NOT enable the flood polygon (checkbox)', afterPick.checkbox === false, `checked=${afterPick.checkbox}`);
 }
 
-// 9. Kathmandu, to confirm non-Latin results come back.
+// 8. Kathmandu, to confirm non-Latin results come back.
 await page.click('.fs-search__box input');
 await page.type('.fs-search__box input', 'Kathmandu', { delay: 40 });
 await page.waitForSelector('.fs-search__results button', { timeout: 15000 });
@@ -367,7 +352,7 @@ const kathResults = await page.evaluate(() =>
 );
 check('search returns results for "Kathmandu"', kathResults.length > 0, `first="${kathResults[0]}"`);
 
-// 10. Keyboard: Enter takes the top result, Escape closes the list.
+// 9. Keyboard: Enter takes the top result, Escape closes the list.
 await page.click('.fs-search__box input');
 await page.type('.fs-search__box input', 'Paris', { delay: 40 });
 await page.waitForSelector('.fs-search__results button', { timeout: 15000 });
@@ -376,33 +361,7 @@ await sleep(300);
 const closedOnEsc = await page.evaluate(() => !document.querySelector('.fs-search__results'));
 check('Escape closes the result list', closedOnEsc);
 
-// 11. Flood polygon can still be enabled by hand (layer kept, not deleted).
-//     Polls for the effect rather than sleeping a fixed 600ms: the toggle lands
-//     via a React state change, and while the map is still decoding tiles the
-//     commit can be pushed well past that, which reads as a broken layer when it
-//     is only a slow frame.
-const floodAfterToggle = await page.evaluate(async () => {
-    const row = [...document.querySelectorAll('.fs-layer-row')].find((r) =>
-        /Flood extent/.test(r.textContent || '')
-    );
-    const input = row.querySelector('input');
-    input.click();
-    const deadline = Date.now() + 10000;
-    let visibility = null;
-    while (Date.now() < deadline) {
-        visibility = window.__fsMap.getLayoutProperty('flood-extent-fill', 'visibility');
-        if (visibility === 'visible') break;
-        await new Promise((r) => setTimeout(r, 100));
-    }
-    return { checked: input.checked, visibility };
-});
-check(
-    'flood polygon can be re-enabled via its checkbox',
-    floodAfterToggle.checked === true && floodAfterToggle.visibility === 'visible',
-    `checked=${floodAfterToggle.checked} visibility=${floodAfterToggle.visibility}`
-);
-
-// 12. No uncaught errors, and no failed network requests we care about.
+// 10. No uncaught errors, and no failed network requests we care about.
 check('no uncaught page errors', pageErrors.length === 0, pageErrors.slice(0, 2).join(' | '));
 // ERR_ABORTED on tile requests is MapLibre cancelling in-flight fetches whose
 // tiles the camera moved away from. It is normal during any pan/zoom/flight and

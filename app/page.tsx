@@ -2,18 +2,11 @@
 import React, { useState, useRef } from 'react';
 import './globals.css';
 import { FloodMap } from './map';
-import type { FloodMapHandle, FloodLayerKey } from './map';
-import Search, { bboxForCenter, BackendUnavailableError } from './search';
+import type { FloodMapHandle } from './map';
+import Search, { BackendUnavailableError } from './search';
 import type { AreaOfInterest } from './search';
 
 type IconProps = { size?: number };
-
-// Karnali River Basin, used when the user has not searched for an AOI.
-const DEFAULT_AOI = {
-    name: 'Karnali River Basin',
-    bbox: bboxForCenter([81.62, 29.03]),
-    center: [81.62, 29.03] as [number, number],
-};
 
 const POLL_INTERVAL_MS = 1500;
 const POLL_TIMEOUT_MS = 15 * 60 * 1000;
@@ -83,13 +76,6 @@ const IconCalendar = ({ size = 14 }: IconProps) => (
     </svg>
 );
 
-const IconSatellite = ({ size = 15 }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M13 7l4 4-7.5 7.5a2.8 2.8 0 01-4-4L13 7z" />
-        <path d="M16 4l4 4M18.5 1.5l4 4M2 22l3.5-3.5" strokeLinecap="round" />
-    </svg>
-);
-
 const IconCheck = ({ size = 10 }: IconProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
         <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
@@ -106,12 +92,6 @@ const IconAlertTriangle = ({ size = 12 }: IconProps) => (
 const IconX = ({ size = 14 }: IconProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
         <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-    </svg>
-);
-
-const IconLink = ({ size = 13 }: IconProps) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <path d="M7 17l10-10M9 7h8v8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
@@ -222,7 +202,7 @@ const PIPELINE_STEPS = [
 ];
 
 export type AnalysisSidebarProps = {
-    aoi: AreaOfInterest;
+    aoi: AreaOfInterest | null;
     date: string;
     onDateChange: (value: string) => void;
     analyzing: boolean;
@@ -267,13 +247,20 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                     <div className="fs-selector">
                         <IconMap size={16} />
                         <span className="fs-selector__body">
-                            <span className="fs-selector__title">{aoi.name}</span>
+                            <span
+                                className="fs-selector__title"
+                                style={aoi ? undefined : { color: 'var(--text-tertiary)' }}
+                            >
+                                {aoi ? aoi.name : 'Search a place…'}
+                            </span>
                         </span>
                     </div>
-                    <div className="fs-field__sublabel">
-                        {aoi.bbox.map((v) => v.toFixed(3)).join(', ')}
-                        {aoiArea !== undefined ? ` · ${Number(aoiArea).toFixed(1)} km²` : ''}
-                    </div>
+                    {aoi && (
+                        <div className="fs-field__sublabel">
+                            {aoi.bbox.map((v) => v.toFixed(3)).join(', ')}
+                            {aoiArea !== undefined ? ` · ${Number(aoiArea).toFixed(1)} km²` : ''}
+                        </div>
+                    )}
                 </div>
 
                 <div className="fs-field">
@@ -281,7 +268,18 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                     <div className="fs-field__sublabel" style={{ marginTop: 0, marginBottom: 8 }}>
                         Event Date
                     </div>
-                    <div className="fs-date-input">
+                    <div
+                        className="fs-date-input"
+                        onClick={(e) => {
+                            const input = e.currentTarget.querySelector('input');
+                            if (!input || input.disabled) return;
+                            try {
+                                input.showPicker();
+                            } catch {
+                                input.focus();
+                            }
+                        }}
+                    >
                         <input
                             type="date"
                             value={date}
@@ -291,20 +289,6 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                         <span className="fs-date-input__icon">
                             <IconCalendar />
                         </span>
-                    </div>
-                </div>
-
-                <div className="fs-field">
-                    <span className="fs-field__label">03 &nbsp;SATELLITE</span>
-                    <div className="fs-selector">
-                        <span className="fs-selector__icon">
-                            <IconSatellite />
-                        </span>
-                        <span className="fs-selector__body">
-                            <span className="fs-selector__title">Sentinel-1 SAR</span>
-                            <span className="fs-selector__subtitle">Cloud tolerant · C-band radar</span>
-                        </span>
-                        <span className="fs-selector__status-dot" />
                     </div>
                 </div>
 
@@ -346,7 +330,7 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                     </div>
                 </div>
 
-                <button type="button" className="fs-btn-analyze" disabled={analyzing} onClick={onAnalyze}>
+                <button type="button" className="fs-btn-analyze" disabled={analyzing || !aoi} onClick={onAnalyze}>
                     {analyzing ? (
                         <>
                             <span className="fs-btn-analyze__spinner" />
@@ -437,7 +421,7 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
 };
 
 export type MapPlaceholderProps = {
-    aoi: AreaOfInterest;
+    aoi: AreaOfInterest | null;
     onAoiSelect: (aoi: AreaOfInterest) => void;
     floodAreaKm2: number | null;
 };
@@ -447,41 +431,23 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     onAoiSelect,
     floodAreaKm2,
 }) => {
-    const [settlementOpen, setSettlementOpen] = useState(true);
     const [activeView, setActiveView] = useState<'before' | 'flood' | 'after'>('flood');
     const [opacity, setOpacity] = useState(68);
     const mapRef = useRef<FloodMapHandle>(null);
 
-    const [layerVisibility, setLayerVisibility] = useState<Record<FloodLayerKey, boolean>>({
-        flood: true,
-        roads: true,
-        bridges: true,
-        hospitals: true,
-        settlements: true,
-    });
-
-    const toggleLayer = (id: FloodLayerKey) => {
-        setLayerVisibility((prev) => ({ ...prev, [id]: !prev[id] }));
-    };
-
     const layers: Array<{
-        id: FloodLayerKey | 'buildings' | 'connectivity';
+        id: 'buildings' | 'connectivity';
         label: string;
         color: string;
         hasData: boolean;
     }> = [
-            { id: 'flood', label: 'Flood extent', color: 'var(--red)', hasData: true },
-            { id: 'roads', label: 'Affected roads', color: 'var(--orange)', hasData: true },
-            { id: 'bridges', label: 'Bridges', color: 'var(--blue)', hasData: true },
             { id: 'buildings', label: 'Buildings', color: 'var(--text-secondary)', hasData: false },
-            { id: 'settlements', label: 'Settlements', color: 'var(--purple)', hasData: true },
             { id: 'connectivity', label: 'Connectivity', color: 'var(--mint)', hasData: false },
-            { id: 'hospitals', label: 'Hospitals', color: 'var(--blue)', hasData: true },
         ];
 
     return (
         <section className="fs-map-wrap">
-            <FloodMap ref={mapRef} visibleLayers={layerVisibility} />
+            <FloodMap ref={mapRef} />
 
             <Search
                 onResultSelect={(next) => {
@@ -494,12 +460,14 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                 <div className="fs-location-chip">
                     <div className="fs-location-chip__title">
                         <IconPin />
-                        {aoi.name.toUpperCase()}
+                        {aoi ? aoi.name.toUpperCase() : 'NO AREA SELECTED'}
                     </div>
-                    <div className="fs-location-chip__coords">
-                        {aoi.center[1].toFixed(3)}° N&nbsp;&nbsp;{aoi.center[0].toFixed(3)}° E ·
-                        EPSG:4326
-                    </div>
+                    {aoi && (
+                        <div className="fs-location-chip__coords">
+                            {aoi.center[1].toFixed(3)}° N&nbsp;&nbsp;{aoi.center[0].toFixed(3)}° E ·
+                            EPSG:4326
+                        </div>
+                    )}
                 </div>
 
                 {floodAreaKm2 !== null && (
@@ -509,55 +477,6 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                     </div>
                 )}
             </div>
-
-            <div className="fs-view-state">
-                <span className="fs-view-state__label">VIEW STATE</span>
-                <span className="fs-view-state__value">Settlement selected</span>
-                <IconChevronDown size={12} />
-            </div>
-
-                        {settlementOpen && (
-                <div className="fs-settlement-card">
-                    <div className="fs-settlement-card__header">
-                        <span className="fs-settlement-card__kicker">SETTLEMENT INTELLIGENCE</span>
-                        <button className="fs-settlement-card__close" onClick={() => setSettlementOpen(false)} aria-label="Close">
-                            <IconX />
-                        </button>
-                    </div>
-                    <div className="fs-settlement-card__body">
-                        <div className="fs-settlement-card__title">Settlement: Chisapani</div>
-                        <span className="fs-badge fs-badge--purple">
-                            <IconAlertTriangle />
-                            POTENTIALLY CUT OFF
-                        </span>
-
-                        <div className="fs-settlement-card__rows">
-                            <div className="fs-settlement-card__row">
-                                <span className="fs-settlement-card__row-label">Nearest hospital</span>
-                                <span className="fs-settlement-card__row-value">District Hospital</span>
-                            </div>
-                            <div className="fs-settlement-card__row">
-                                <span className="fs-settlement-card__row-label">Road connection</span>
-                                <span className="fs-settlement-card__row-value">No available mapped route</span>
-                            </div>
-                            <div className="fs-settlement-card__row">
-                                <span className="fs-settlement-card__row-label">Affected road segments</span>
-                                <span className="fs-settlement-card__row-value">3 segments</span>
-                            </div>
-                            <div className="fs-settlement-card__row">
-                                <span className="fs-settlement-card__row-label">Distance</span>
-                                <span className="fs-settlement-card__row-value">12.6 km</span>
-                            </div>
-                        </div>
-
-                        <button className="fs-btn-trace">
-                            <IconLink />
-                            TRACE CONNECTIVITY
-                            <IconArrowRight size={12} />
-                        </button>
-                    </div>
-                </div>
-            )}
 
                         <div className="fs-map-controls">
                 <button className="fs-map-controls__btn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
@@ -591,9 +510,8 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                     >
                         <input
                             type="checkbox"
-                            checked={layer.hasData ? layerVisibility[layer.id as FloodLayerKey] : false}
+                            checked={false}
                             disabled={!layer.hasData}
-                            onChange={() => layer.hasData && toggleLayer(layer.id as FloodLayerKey)}
                         />
                         <span className="fs-layer-row__swatch" style={{ background: layer.color }} />
                         {layer.label}
@@ -691,13 +609,12 @@ export const IntelligenceSidebar: React.FC = () => {
                 <p className="fs-report-text">
                     {lang === 'en' ? (
                         <>
-                            Flood analysis identifies approximately <b>12.4 km²</b> of potentially affected
-                            area. 18.7 km of mapped roads and 4 bridges intersect the detected flood extent.
-                            7 settlements have no remaining mapped road connection to their nearest reference
-                            location after affected road segments are excluded.
+                            Flood analysis identifies potentially affected areas from Sentinel-1
+                            imagery. Infrastructure and connectivity impacts are reported once
+                            verified source data becomes available.
                         </>
                     ) : (
-                        <>बाढी विश्लेषणले लगभग १२.४ वर्ग कि.मि. प्रभावित क्षेत्र पहिचान गरेको छ।</>
+                        <>बाढी विश्लेषणले सेन्टिनल-1 तस्बिरबाट सम्भावित प्रभावित क्षेत्र पहिचान गर्छ।</>
                     )}
                 </p>
 
@@ -751,9 +668,6 @@ export const ImpactSummary: React.FC<{ floodAreaKm2: number | null }> = ({ flood
             unit: floodAreaKm2 !== null ? 'km²' : '',
             color: 'var(--red)',
         },
-        { label: 'AFFECTED ROADS', value: '18.7', unit: 'km', color: 'var(--orange)' },
-        { label: 'AFFECTED BRIDGES', value: '04', unit: '', color: 'var(--blue)' },
-        { label: 'POTENTIALLY CUT-OFF', value: '07', unit: 'settlements', color: 'var(--purple)' },
     ];
 
     return (
@@ -784,14 +698,14 @@ export const ImpactSummary: React.FC<{ floodAreaKm2: number | null }> = ({ flood
 
 export const DashboardLayout: React.FC = () => {
     const [date, setDate] = useState('2026-08-26');
-    const [aoi, setAoi] = useState<AreaOfInterest>(DEFAULT_AOI);
+    const [aoi, setAoi] = useState<AreaOfInterest | null>(null);
     const [analyzing, setAnalyzing] = useState(false);
     const [state, setState] = useState<AnalysisState | null>(null);
     const [phase, setPhase] = useState<AnalysisPhase | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleAnalyze = async () => {
-        if (analyzing) return;
+        if (analyzing || !aoi) return;
         setAnalyzing(true);
         setError(null);
         setState(null);
