@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { GeocodingControl } from '@maptiler/geocoding-control/maplibregl';
 
 
 export const DEFAULT_STYLE_URL: string = (() => {
@@ -32,7 +31,6 @@ type GeoJSONFeature = {
     properties: Record<string, unknown>;
     geometry: GeoJSONGeometry;
 };
-type GeoJSONData = any;
 export type FeatureCollection = {
     type: 'FeatureCollection';
     features: GeoJSONFeature[];
@@ -197,6 +195,7 @@ export interface FloodMapHandle {
     recenter: () => void;
     resize: () => void;
     toggleFullscreen: () => void;
+    flyTo: (opts: { center?: [number, number]; zoom?: number; duration?: number }) => void;
 }
 
 function applyLayerVisibility(
@@ -214,7 +213,7 @@ function applyLayerVisibility(
 }
 
 function addSampleLayers(map: maplibregl.Map) {
-    map.addSource('flood-extent', { type: 'geojson', data: SAMPLE_FLOOD_EXTENT as GeoJSONData });
+    map.addSource('flood-extent', { type: 'geojson', data: SAMPLE_FLOOD_EXTENT });
     map.addLayer({
         id: 'flood-extent-fill',
         type: 'fill',
@@ -228,7 +227,7 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'line-color': '#ef5a5a', 'line-width': 2 },
     });
 
-    map.addSource('roads', { type: 'geojson', data: SAMPLE_ROADS as GeoJSONData });
+    map.addSource('roads', { type: 'geojson', data: SAMPLE_ROADS });
     map.addLayer({
         id: 'roads-line',
         type: 'line',
@@ -237,7 +236,7 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'line-color': '#f0a23f', 'line-width': 3 },
     });
 
-    map.addSource('bridges', { type: 'geojson', data: SAMPLE_BRIDGES as GeoJSONData });
+    map.addSource('bridges', { type: 'geojson', data: SAMPLE_BRIDGES });
     map.addLayer({
         id: 'bridges-point',
         type: 'circle',
@@ -250,7 +249,7 @@ function addSampleLayers(map: maplibregl.Map) {
         },
     });
 
-    map.addSource('hospitals', { type: 'geojson', data: SAMPLE_HOSPITALS as GeoJSONData });
+    map.addSource('hospitals', { type: 'geojson', data: SAMPLE_HOSPITALS });
     map.addLayer({
         id: 'hospitals-point',
         type: 'circle',
@@ -275,7 +274,7 @@ function addSampleLayers(map: maplibregl.Map) {
         paint: { 'text-color': '#06130d' },
     });
 
-    map.addSource('settlements', { type: 'geojson', data: SAMPLE_SETTLEMENTS as GeoJSONData });
+    map.addSource('settlements', { type: 'geojson', data: SAMPLE_SETTLEMENTS });
     map.addLayer({
         id: 'settlements-point',
         type: 'circle',
@@ -398,16 +397,6 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
 
             map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
 
-            const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
-            if (maptilerKey) {
-                const gc = new GeocodingControl({
-                    apiKey: maptilerKey,
-                    placeholder: 'Search places…',
-                    collapsed: false,
-                });
-                map.addControl(gc as unknown as maplibregl.IControl, 'top-left');
-            }
-
             map.on('load', () => {
                 try {
                     addSampleLayers(map);
@@ -454,6 +443,15 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
             recenter: () =>
                 mapInstanceRef.current?.flyTo({ center: INITIAL_CENTER, zoom: INITIAL_ZOOM, duration: 500 }),
             resize: () => mapInstanceRef.current?.resize(),
+            flyTo: (opts: { center?: [number, number]; zoom?: number; duration?: number }) => {
+                const m = mapInstanceRef.current;
+                if (!m) return;
+                m.flyTo({
+                    ...(opts.center ? { center: opts.center } : {}),
+                    ...(opts.zoom !== undefined ? { zoom: opts.zoom } : {}),
+                    duration: opts.duration ?? 500,
+                });
+            },
             toggleFullscreen: () => {
                 const el = containerRef.current?.parentElement ?? containerRef.current;
                 if (!el) return;

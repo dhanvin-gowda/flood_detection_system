@@ -395,6 +395,28 @@ input {
   color: var(--text-primary);
   font-size: 12.5px;
   font-family: var(--font-mono);
+  cursor: pointer;
+}
+
+.fs-date-input:focus-within {
+  border-color: var(--blue);
+}
+
+.fs-date-input input[type='date'] {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Hide the native picker indicator glyph; the row already reads as a control
+   and two picker affordances side by side looked broken. */
+.fs-date-input input[type='date']::-webkit-calendar-picker-indicator {
+  display: none;
 }
 
 .fs-date-input__icon {
@@ -1422,4 +1444,112 @@ input {
 .fs-search__results svg {
   flex-shrink: 0;
   color: var(--text-tertiary);
+}
+
+/* A failed lookup reuses the results panel as a status slot, so it needs the
+   list's box treatment plus the error palette to read as a failure rather than
+   as another row of results. */
+.fs-search__results--error {
+  color: var(--red);
+  border-color: var(--red-border);
+  background: var(--red-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------------------
+   Live analysis state
+   ------------------------------------------------------------------------
+   The analyze button doubles as the progress indicator, so its disabled
+   treatment has to read as "busy" rather than "unavailable". Acquisition dots
+   fall back to a hollow outline while their date pair is still unresolved.
+   ------------------------------------------------------------------------ */
+.fs-btn-analyze:disabled {
+  background: var(--bg-hover);
+  color: var(--text-tertiary);
+  cursor: progress;
+}
+
+.fs-btn-analyze:disabled:hover {
+  background: var(--bg-hover);
+}
+
+.fs-btn-analyze__spinner {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--text-tertiary);
+  border-top-color: var(--text-primary);
+  border-radius: 50%;
+  animation: fs-analyze-spin 700ms linear infinite;
+}
+
+@keyframes fs-analyze-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-btn-analyze__spinner { animation: none; }
+}
+
+.fs-selector__status-dot--pending {
+  background: transparent;
+  border: 1px solid var(--text-tertiary);
+}
+
+.fs-analyze-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -12px 0 24px;
+  padding: 9px 11px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.fs-analyze-error svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-tertiary);
+}
+
+.fs-analyze-result {
+  margin: -12px 0 24px;
+  padding: 11px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
+.fs-analyze-result__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 9px;
+  margin-bottom: 9px;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.fs-analyze-result__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  color: var(--text-tertiary);
+  font-size: 11.5px;
+}
+
+.fs-analyze-result__row span:last-child {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }

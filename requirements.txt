@@ -1,0 +1,7 @@
+﻿fastapi
+uvicorn
+httpx
+rasterio
+numpy
+python-dotenv
+pydantic-settings

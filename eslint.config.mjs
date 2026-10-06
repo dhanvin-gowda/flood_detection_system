@@ -12,7 +12,17 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored MapLibre bundles are minified worker/ABI shims checked into the
+    // repo, not source. Linting them produced ~1100 warnings and buried any
+    // real finding from app/.
+    "public/**",
   ]),
+  {
+    // The postinstall patcher runs on bare Node before Next is involved, so it
+    // is CommonJS by design rather than by accident.
+    files: ["scripts/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
 ]);
 
 export default eslintConfig;
