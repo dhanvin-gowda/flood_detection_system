@@ -201,12 +201,6 @@ input {
   color: var(--red);
 }
 
-.fs-badge--purple {
-  background: var(--purple-dim);
-  border: 1px solid var(--purple-border);
-  color: var(--purple);
-}
-
 .fs-dot {
   width: 6px;
   height: 6px;
@@ -345,13 +339,6 @@ input {
   color: var(--text-primary);
 }
 
-.fs-selector__icon {
-  width: 16px;
-  height: 16px;
-  color: var(--mint);
-  flex-shrink: 0;
-}
-
 .fs-selector__body {
   flex: 1;
   text-align: left;
@@ -362,17 +349,6 @@ input {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-primary);
-}
-
-.fs-selector__subtitle {
-  font-size: 10.5px;
-  color: var(--text-tertiary);
-  margin-top: 1px;
-}
-
-.fs-selector__chevron {
-  color: var(--text-tertiary);
-  flex-shrink: 0;
 }
 
 .fs-selector__status-dot {
@@ -421,6 +397,7 @@ input {
 
 .fs-date-input__icon {
   color: var(--text-tertiary);
+  pointer-events: none;
 }
 
 .fs-imagery-grid {
@@ -624,126 +601,6 @@ input {
   font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
-}
-
-.fs-view-state {
-  position: absolute;
-  top: 58px;
-  left: 14px;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  padding: 7px 10px;
-  font-size: 11px;
-}
-
-.fs-view-state__label {
-  color: var(--text-tertiary);
-  font-size: 9.5px;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
-.fs-view-state__value {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* Settlement popup */
-.fs-settlement-card {
-  position: absolute;
-  top: 92px;
-  left: 190px;
-  width: 260px;
-  z-index: 6;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
-}
-
-@media (max-width: 1100px) {
-  .fs-settlement-card {
-    left: 14px;
-  }
-}
-
-.fs-settlement-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px 0;
-}
-
-.fs-settlement-card__kicker {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-}
-
-.fs-settlement-card__close {
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  padding: 2px;
-  display: flex;
-}
-
-.fs-settlement-card__body {
-  padding: 8px 12px 12px;
-}
-
-.fs-settlement-card__title {
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.fs-settlement-card__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin: 10px 0 12px;
-}
-
-.fs-settlement-card__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.fs-settlement-card__row-label {
-  color: var(--text-tertiary);
-}
-
-.fs-settlement-card__row-value {
-  color: var(--text-primary);
-  font-weight: 600;
-  text-align: right;
-}
-
-.fs-btn-trace {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 9px;
-  background: var(--mint-strong);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: var(--text-on-mint);
-  font-size: 11.5px;
-  font-weight: 700;
 }
 
 /* Zoom / tool controls */
@@ -1261,53 +1118,6 @@ input {
 .maplibregl-popup-close-button:hover {
   color: var(--text-primary);
   background: transparent;
-}
-
-.fs-maplibre-popup__kicker {
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-  margin-bottom: 3px;
-}
-
-.fs-maplibre-popup__title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
-}
-
-.fs-maplibre-popup__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.fs-maplibre-popup__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 11px;
-}
-
-.fs-maplibre-popup__row span:first-child {
-  color: var(--text-tertiary);
-}
-
-.fs-maplibre-popup__row span:last-child {
-  color: var(--text-primary);
-  font-weight: 600;
-  text-align: right;
-}
-
-.fs-maplibre-popup__note {
-  font-size: 9.5px;
-  color: var(--text-tertiary);
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 6px;
 }
 
 /* ------------------------------------------------------------------------
