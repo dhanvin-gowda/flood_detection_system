@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:all": "concurrently -n web,api -c cyan,magenta -k \"pnpm dev\" \"pnpm run dev:api\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "postinstall": "node scripts/patch-geocoding.cjs"
   },
   "dependencies": {
@@ -21,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
     "puppeteer-core": "^25.12.0",
