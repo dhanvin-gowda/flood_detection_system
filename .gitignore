@@ -45,3 +45,7 @@ data/
 __pycache__/
 *.pyc
 .venv/
+
+progress.md
+AGENTS.md
+tasks.md

@@ -1,8 +1,14 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import './globals.css';
-import { FloodMap } from './map';
-import type { FloodMapHandle } from './map';
+import { FloodMap, OSM_LAYER_NAMES } from './map';
+import type {
+    FloodMapHandle,
+    FloodVitLayerName,
+    OsmFeatureCollection,
+    OsmLayerName,
+    RasterOverlay,
+} from './map';
 import Search, { BackendUnavailableError } from './search';
 import type { AreaOfInterest } from './search';
 
@@ -124,6 +130,13 @@ const IconLayers = ({ size = 13 }: IconProps) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M12 2l9 5-9 5-9-5 9-5z" strokeLinejoin="round" />
         <path d="M3 12l9 5 9-5M3 17l9 5 9-5" strokeLinejoin="round" />
+    </svg>
+);
+
+const IconRefresh = ({ size = 12 }: IconProps) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+        <path d="M20.5 12a8.5 8.5 0 11-2.49-6.01" strokeLinecap="round" />
+        <path d="M20.5 3.5v5h-5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
@@ -424,30 +437,203 @@ export type MapPlaceholderProps = {
     aoi: AreaOfInterest | null;
     onAoiSelect: (aoi: AreaOfInterest) => void;
     floodAreaKm2: number | null;
+    analysisId: string | null;
+    phase: AnalysisPhase | null;
+};
+
+type OsmLayerStatus = 'idle' | 'loading' | 'ok' | 'error';
+
+const OSM_LAYER_META: Array<{
+    id: OsmLayerName;
+    label: string;
+    color: string;
+}> = [
+    { id: 'roads', label: 'Roads', color: 'var(--mint)' },
+    { id: 'buildings', label: 'Buildings', color: '#f0b429' },
+    { id: 'settlements', label: 'Settlements', color: '#ffffff' },
+];
+
+const FLOODVIT_ENDPOINTS: Record<FloodVitLayerName, string> = {
+    polygons: 'polygons',
+    affectedRoads: 'affected_roads',
+    affectedBridges: 'affected_bridges',
+    disconnectedRoutes: 'disconnected_routes',
+    disconnectedSettlements: 'disconnected_settlements',
+};
+
+const FLOODVIT_LAYER_META: Array<{
+    id: FloodVitLayerName;
+    label: string;
+    color: string;
+}> = [
+    { id: 'polygons', label: 'FloodViT flood area', color: '#22d3ee' },
+    { id: 'affectedRoads', label: 'Affected roads', color: '#fb923c' },
+    { id: 'affectedBridges', label: 'Potentially affected bridges', color: '#f472b6' },
+    { id: 'disconnectedRoutes', label: 'Disconnected routes', color: '#ef4444' },
+    { id: 'disconnectedSettlements', label: 'Disconnected settlements', color: '#ef4444' },
+];
+
+const FLOODVIT_LAYER_IDS = Object.keys(FLOODVIT_ENDPOINTS) as FloodVitLayerName[];
+
+const floodVitStatusMap = (value: OsmLayerStatus): Record<FloodVitLayerName, OsmLayerStatus> => ({
+    polygons: value,
+    affectedRoads: value,
+    affectedBridges: value,
+    disconnectedRoutes: value,
+    disconnectedSettlements: value,
+});
+
+const RASTER_FILE: Record<'before' | 'flood' | 'after', string> = {
+    before: 'before.png',
+    flood: 'flood_mask.png',
+    after: 'after.png',
 };
 
 export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     aoi,
     onAoiSelect,
     floodAreaKm2,
+    analysisId,
+    phase,
 }) => {
     const [activeView, setActiveView] = useState<'before' | 'flood' | 'after'>('flood');
     const [opacity, setOpacity] = useState(68);
+    const [osmBundle, setOsmBundle] = useState<{
+        key: string;
+        data: Partial<Record<OsmLayerName, OsmFeatureCollection>>;
+        status: Record<OsmLayerName, OsmLayerStatus>;
+    } | null>(null);
+    const [layerVisible, setLayerVisible] = useState<Record<OsmLayerName, boolean>>({
+        roads: true,
+        buildings: true,
+        settlements: true,
+    });
+    const [floodVitBundle, setFloodVitBundle] = useState<{
+        key: string;
+        data: Partial<Record<FloodVitLayerName, OsmFeatureCollection | null>>;
+        status: Record<FloodVitLayerName, OsmLayerStatus>;
+    } | null>(null);
+    const [floodVitVisible, setFloodVitVisible] = useState<Record<FloodVitLayerName, boolean>>({
+        polygons: true,
+        affectedRoads: true,
+        affectedBridges: true,
+        disconnectedRoutes: true,
+        disconnectedSettlements: true,
+    });
+    // The FloodViT files are written by offline scripts *after* the analysis
+    // completes, so the one-shot fetch on completion can easily 404; bumping
+    // refreshTick re-runs it (LAYERS panel refresh button) without clearing
+    // whatever is already on the map. `refreshing` flips in the click handler
+    // and clears when the batch lands, so rows read "loading…" meanwhile.
+    const [refreshTick, setRefreshTick] = useState(0);
+    const [refreshing, setRefreshing] = useState(false);
     const mapRef = useRef<FloodMapHandle>(null);
 
-    const layers: Array<{
-        id: 'buildings' | 'connectivity';
-        label: string;
-        color: string;
-        hasData: boolean;
-    }> = [
-            { id: 'buildings', label: 'Buildings', color: 'var(--text-secondary)', hasData: false },
-            { id: 'connectivity', label: 'Connectivity', color: 'var(--mint)', hasData: false },
-        ];
+    // Per-analysis vector data (OSM layers written by the pipeline, FloodViT
+    // polygons written offline by scripts/floodvit/mask_to_polygons.py) only
+    // exists once the phase settles on "completed". Bundles are keyed by
+    // analysis id so stale data for a previous run is ignored rather than
+    // cleared, and a failed fetch just marks its own row unavailable.
+    const dataKey = analysisId && phase === 'completed' ? analysisId : null;
+    useEffect(() => {
+        if (!dataKey) return;
+        let cancelled = false;
+        (async () => {
+            const data: Partial<Record<OsmLayerName, OsmFeatureCollection>> = {};
+            const status = {
+                roads: 'error' as OsmLayerStatus,
+                buildings: 'error' as OsmLayerStatus,
+                settlements: 'error' as OsmLayerStatus,
+            };
+            await Promise.all(
+                OSM_LAYER_NAMES.map(async (layer) => {
+                    try {
+                        const res = await fetch(`/backend/osm/${dataKey}/${layer}`);
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        data[layer] = (await res.json()) as OsmFeatureCollection;
+                        status[layer] = 'ok';
+                    } catch (e) {
+                        console.warn(`[flood] OSM layer ${layer} unavailable`, e);
+                    }
+                })
+            );
+            if (!cancelled) setOsmBundle({ key: dataKey, data, status });
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [dataKey]);
+
+    useEffect(() => {
+        if (!dataKey) return;
+        let cancelled = false;
+        (async () => {
+            const data: Partial<Record<FloodVitLayerName, OsmFeatureCollection | null>> = {};
+            const status = floodVitStatusMap('error');
+            await Promise.all(
+                FLOODVIT_LAYER_IDS.map(async (layer) => {
+                    try {
+                        const res = await fetch(
+                            `/backend/floodvit/${dataKey}/${FLOODVIT_ENDPOINTS[layer]}`
+                        );
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        data[layer] = (await res.json()) as OsmFeatureCollection;
+                        status[layer] = 'ok';
+                    } catch (e) {
+                        console.warn(`[flood] FloodViT layer ${layer} unavailable`, e);
+                    }
+                })
+            );
+            if (cancelled) return;
+            setFloodVitBundle({ key: dataKey, data, status });
+            setRefreshing(false);
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [dataKey, refreshTick]);
+
+    const bundleFresh = !!osmBundle && osmBundle.key === dataKey;
+    const osmData = bundleFresh ? osmBundle.data : {};
+    const osmStatus: Record<OsmLayerName, OsmLayerStatus> = bundleFresh
+        ? osmBundle.status
+        : dataKey
+            ? { roads: 'loading', buildings: 'loading', settlements: 'loading' }
+            : { roads: 'idle', buildings: 'idle', settlements: 'idle' };
+
+    const floodVitFresh = !!floodVitBundle && floodVitBundle.key === dataKey;
+    const floodVitData: Partial<Record<FloodVitLayerName, OsmFeatureCollection | null>> =
+        floodVitFresh ? floodVitBundle.data : {};
+    const floodVitStatus: Record<FloodVitLayerName, OsmLayerStatus> =
+        floodVitFresh && !refreshing
+            ? floodVitBundle.status
+            : floodVitStatusMap(dataKey ? 'loading' : 'idle');
+
+    const handleRefreshLayers = () => {
+        if (!dataKey || refreshing) return;
+        setRefreshing(true);
+        setRefreshTick((tick) => tick + 1);
+    };
+
+    const raster: RasterOverlay | null =
+        analysisId && phase === 'completed' && aoi
+            ? {
+                  url: `/backend/rasters/${analysisId}/${RASTER_FILE[activeView]}`,
+                  bounds: [aoi.bbox[0], aoi.bbox[1], aoi.bbox[2], aoi.bbox[3]],
+                  opacity: opacity / 100,
+              }
+            : null;
 
     return (
         <section className="fs-map-wrap">
-            <FloodMap ref={mapRef} />
+            <FloodMap
+                ref={mapRef}
+                raster={raster}
+                osm={osmData}
+                visible={layerVisible}
+                floodVit={floodVitData}
+                floodVitVisible={floodVitVisible}
+            />
 
             <Search
                 onResultSelect={(next) => {
@@ -501,23 +687,80 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                 <div className="fs-layers-panel__header">
                     <IconLayers />
                     LAYERS
-                    <span className="fs-layers-panel__count">{String(layers.length).padStart(2, '0')}</span>
-                </div>
-                {layers.map((layer) => (
-                    <label
-                        className={`fs-layer-row ${!layer.hasData ? 'fs-layer-row--disabled' : ''}`}
-                        key={layer.label}
+                    <span className="fs-layers-panel__count">
+                        {String(OSM_LAYER_META.length + FLOODVIT_LAYER_META.length).padStart(2, '0')}
+                    </span>
+                    <button
+                        type="button"
+                        className="fs-layers-panel__refresh"
+                        aria-label="Refresh FloodViT layers"
+                        title="Refresh FloodViT layers (re-runs the offline scripts' outputs)"
+                        disabled={!dataKey || refreshing}
+                        onClick={handleRefreshLayers}
                     >
-                        <input
-                            type="checkbox"
-                            checked={false}
-                            disabled={!layer.hasData}
-                        />
-                        <span className="fs-layer-row__swatch" style={{ background: layer.color }} />
-                        {layer.label}
-                        {!layer.hasData && <span className="fs-layer-row__badge">no data</span>}
-                    </label>
-                ))}
+                        <IconRefresh />
+                    </button>
+                </div>
+                {OSM_LAYER_META.map((layer) => {
+                    const status = osmStatus[layer.id];
+                    const ready = status === 'ok';
+                    return (
+                        <label
+                            className={`fs-layer-row ${!ready ? 'fs-layer-row--disabled' : ''}`}
+                            key={layer.id}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={ready && layerVisible[layer.id]}
+                                disabled={!ready}
+                                onChange={(e) =>
+                                    setLayerVisible((prev) => ({
+                                        ...prev,
+                                        [layer.id]: e.target.checked,
+                                    }))
+                                }
+                            />
+                            <span className="fs-layer-row__swatch" style={{ background: layer.color }} />
+                            <span className="fs-layer-row__label">{layer.label}</span>
+                            {status === 'loading' && (
+                                <span className="fs-layer-row__badge">loading…</span>
+                            )}
+                            {(status === 'error' || status === 'idle') && (
+                                <span className="fs-layer-row__badge">no data</span>
+                            )}
+                        </label>
+                    );
+                })}
+                {FLOODVIT_LAYER_META.map((layer) => {
+                    const status = floodVitStatus[layer.id];
+                    const ready = status === 'ok';
+                    return (
+                        <label
+                            className={`fs-layer-row ${!ready ? 'fs-layer-row--disabled' : ''}`}
+                            key={layer.id}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={ready && floodVitVisible[layer.id]}
+                                disabled={!ready}
+                                onChange={(e) =>
+                                    setFloodVitVisible((prev) => ({
+                                        ...prev,
+                                        [layer.id]: e.target.checked,
+                                    }))
+                                }
+                            />
+                            <span className="fs-layer-row__swatch" style={{ background: layer.color }} />
+                            <span className="fs-layer-row__label">{layer.label}</span>
+                            {status === 'loading' && (
+                                <span className="fs-layer-row__badge">loading…</span>
+                            )}
+                            {(status === 'error' || status === 'idle') && (
+                                <span className="fs-layer-row__badge">no data</span>
+                            )}
+                        </label>
+                    );
+                })}
             </div>
 
                         <div className="fs-map-bottombar">
@@ -543,7 +786,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                         ))}
                     </div>
                     <div className="fs-opacity-control">
-                        Flood opacity
+                        Overlay opacity
                         <input
                             type="range"
                             min={0}
@@ -702,6 +945,7 @@ export const DashboardLayout: React.FC = () => {
     const [analyzing, setAnalyzing] = useState(false);
     const [state, setState] = useState<AnalysisState | null>(null);
     const [phase, setPhase] = useState<AnalysisPhase | null>(null);
+    const [analysisId, setAnalysisId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleAnalyze = async () => {
@@ -710,6 +954,7 @@ export const DashboardLayout: React.FC = () => {
         setError(null);
         setState(null);
         setPhase('queued');
+        setAnalysisId(null);
 
         try {
             const res = await fetch('/backend/analyze', {
@@ -719,6 +964,7 @@ export const DashboardLayout: React.FC = () => {
             });
             if (!res.ok) throw new BackendUnavailableError(res.status);
             const created = (await res.json()) as { analysisId: string };
+            setAnalysisId(created.analysisId);
             console.info('[flood] analysis queued', created.analysisId, aoi.bbox, date);
 
             const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -742,23 +988,29 @@ export const DashboardLayout: React.FC = () => {
                     break;
                 }
                 if (next.phase === 'error') {
-                    throw new Error(next.error || 'Analysis failed');
+                    const rawErr = next.error || 'Analysis failed';
+                    const safeErr = rawErr.replace(/[^\x00-\x7F]/g, ' ');
+                    // Backend-reported failures are expected outcomes, not
+                    // crashes: show them inline instead of throwing (a thrown
+                    // Error + console.error surfaces as a Next dev overlay).
+                    setError(safeErr);
+                    settled = true;
+                    break;
                 }
             }
 
-            // Falling out of the loop on the deadline leaves the job running on
-            // the backend while the button reads as idle, so say so instead.
             if (!settled) {
-                throw new Error(
+                setError(
                     `Analysis ${created.analysisId} did not finish within ` +
                         `${POLL_TIMEOUT_MS / 60000} min. It may still be running - ` +
                         'check the backend terminal.'
                 );
             }
         } catch (e) {
-            const message = e instanceof Error ? e.message : 'Analysis failed';
+            const rawMessage = e instanceof Error ? e.message : 'Analysis failed';
+            const message = rawMessage.replace(/[^\x00-\x7F]/g, ' ');
             setError(message);
-            console.error('[flood] analysis failed', e);
+            console.warn('[flood] analysis failed:', message);
         } finally {
             setAnalyzing(false);
         }
@@ -783,7 +1035,13 @@ export const DashboardLayout: React.FC = () => {
                     error={error}
                     onAnalyze={handleAnalyze}
                 />
-                <MapPlaceholder aoi={aoi} onAoiSelect={setAoi} floodAreaKm2={floodAreaKm2} />
+                <MapPlaceholder
+                    aoi={aoi}
+                    onAoiSelect={setAoi}
+                    floodAreaKm2={floodAreaKm2}
+                    analysisId={analysisId}
+                    phase={phase}
+                />
                 <IntelligenceSidebar />
             </div>
             <ImpactSummary floodAreaKm2={floodAreaKm2} />
