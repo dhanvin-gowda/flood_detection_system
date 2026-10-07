@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Tuple
@@ -53,6 +55,60 @@ def _window_for(bbox: Sequence[float], transform, width: int, height: int) -> Wi
     return win.round_offsets().round_lengths()
 
 
+# CDSE's OData download backend fails as often as it works (502/503/504 during
+# incidents, connection resets in between), and GDAL's own GDAL_HTTP_MAX_RETRY
+# only respreads attempts over ~2 seconds. These bound an application-level
+# retry above it: enough to ride out a blip, short enough that a real outage
+# still reports quickly.
+FETCH_ATTEMPTS = 4
+FETCH_BACKOFF_S = (2.0, 5.0, 10.0)
+
+# Statuses GDAL/CURL can report that are worth retrying: gateway/rate-limit
+# failures on CDSE's side, never a client mistake (401/404 are permanent).
+_RETRYABLE_STATUS_RE = re.compile(r"HTTP response code: (\d{3})", re.IGNORECASE)
+_RETRYABLE_STATUSES = frozenset({"429", "502", "503", "504"})
+_RETRYABLE_PATTERNS = (
+    "connection",
+    "winerror 10054",
+    "winerror 10060",
+    "curl error",
+    "failed to connect",
+)
+
+
+def _is_retryable_fetch_error(exc: BaseException) -> bool:
+    """Transient transport failures only — logic errors never retry."""
+    msg = str(exc).lower()
+    match = _RETRYABLE_STATUS_RE.search(msg)
+    if match and match.group(1) in _RETRYABLE_STATUSES:
+        return True
+    if isinstance(exc, (ConnectionError, TimeoutError)):
+        return True
+    return any(pattern in msg for pattern in _RETRYABLE_PATTERNS)
+
+
+def _friendly_fetch_error(label: str, exc: BaseException) -> BaseException:
+    """Translate GDAL/libcurl internals into an actionable dashboard message.
+
+    Returns ``exc`` unchanged when it has no recognised transient signature, so
+    real errors (AOI misses the product, entirely-nodata scene) keep their detail.
+    """
+    msg = str(exc)
+    match = _RETRYABLE_STATUS_RE.search(msg)
+    if match and match.group(1) in _RETRYABLE_STATUSES:
+        return RasterAnalysisError(
+            f"{label} scene fetch failed: Copernicus download service "
+            f"temporarily unavailable (HTTP {match.group(1)}). "
+            "Try again in a few minutes."
+        )
+    if _is_retryable_fetch_error(exc):
+        return RasterAnalysisError(
+            f"{label} scene fetch failed: could not reach the Copernicus "
+            "download service (network error). Try again later."
+        )
+    return exc
+
+
 def fetch_scene(
     client: CDSEClient,
     feature: Dict[str, Any],
@@ -81,26 +137,55 @@ def fetch_scene(
         float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3]), width, height
     )
 
-    token = client.auth_header
-    with rasterio.Env(
-        GDAL_HTTP_HEADERS=f"Authorization: {token}",
-        GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
-        GDAL_HTTP_MAX_RETRY="3",
-    ):
-        with rasterio.open("/vsicurl/" + href) as src:
-            src_transform = transform_from_bounds(
-                float(src_bbox[0]), float(src_bbox[1]),
-                float(src_bbox[2]), float(src_bbox[3]),
-                src.width, src.height,
-            )
-            win = _window_for(bbox, src_transform, src.width, src.height)
-            if win.width <= 0 or win.height <= 0:
-                raise RasterAnalysisError(
-                    f"AOI does not intersect product {feature.get('id')}"
+    def _read_remote_block(token: str):
+        """One full remote read: open the COG, locate the AOI window, load it.
+
+        Kept as a closure so the retry loop below can re-run the whole unit
+        with a fresh token — a partially-opened dataset must never be reused.
+        """
+        with rasterio.Env(
+            GDAL_HTTP_HEADERS=f"Authorization: {token}",
+            GDAL_DISABLE_READDIR_ON_OPEN="EMPTY_DIR",
+            GDAL_HTTP_MAX_RETRY="3",
+            GDAL_HTTP_RETRY_DELAY="2",
+        ):
+            with rasterio.open("/vsicurl/" + href) as src:
+                src_transform = transform_from_bounds(
+                    float(src_bbox[0]), float(src_bbox[1]),
+                    float(src_bbox[2]), float(src_bbox[3]),
+                    src.width, src.height,
                 )
-            block = src.read(1, window=win)
-            block_transform = src_transform * rasterio.Affine.translation(
-                win.col_off, win.row_off
+                win = _window_for(bbox, src_transform, src.width, src.height)
+                if win.width <= 0 or win.height <= 0:
+                    raise RasterAnalysisError(
+                        f"AOI does not intersect product {feature.get('id')}"
+                    )
+                block = src.read(1, window=win)
+                block_transform = src_transform * rasterio.Affine.translation(
+                    win.col_off, win.row_off
+                )
+        return block, block_transform
+
+    for attempt in range(1, FETCH_ATTEMPTS + 1):
+        if attempt > 1:
+            time.sleep(FETCH_BACKOFF_S[attempt - 2])
+            # The header is baked into GDAL_HTTP_HEADERS per attempt; a token
+            # that expired during the backoff would 401 the next read.
+            token = f"Bearer {client._get_token(force=True)}"
+        else:
+            token = client.auth_header
+        try:
+            block, block_transform = _read_remote_block(token)
+            break
+        except Exception as exc:
+            if not _is_retryable_fetch_error(exc) or attempt == FETCH_ATTEMPTS:
+                friendly = _friendly_fetch_error(label, exc)
+                if friendly is exc:
+                    raise
+                raise friendly from exc
+            print(
+                f"[sh] {label:<6} fetch attempt {attempt}/{FETCH_ATTEMPTS} "
+                f"failed ({exc}) — retrying"
             )
 
     dst = np.zeros((height, width), dtype="float64")
@@ -271,6 +356,51 @@ def analyze_pair(
         f"before={results['beforeDb']['mean']:.2f} dB after={results['afterDb']['mean']:.2f} dB"
     )
     return results
+
+
+def render_preview(tif_path: Path, png_path: Path, mode: str = "gray") -> Path:
+    """Stretch a scene into an 8-bit RGBA PNG that MapLibre can overlay.
+
+    ``mode="gray"`` applies a 2-98 percentile stretch to the valid DN values so
+    the SAR scene reads visually regardless of absolute calibration, with
+    alpha 0 on nodata so the basemap shows through the AOI edges. ``mode="mask"``
+    paints flooded pixels as translucent red for the flood overlay. The PNG is
+    cached next to the source raster; the analysis folders are immutable once
+    the job completes, so the stretch never needs recomputing.
+    """
+    from PIL import Image
+
+    tif_path, png_path = Path(tif_path), Path(png_path)
+    if png_path.exists():
+        return png_path
+
+    with rasterio.open(tif_path) as src:
+        data = src.read(1)
+
+    height, width = data.shape
+    rgba = np.zeros((height, width, 4), dtype="uint8")
+
+    if mode == "mask":
+        flooded = data > 0
+        rgba[flooded] = (255, 64, 64, 190)
+    else:
+        valid = data > 0
+        if not np.any(valid):
+            raise RasterAnalysisError(f"{tif_path.name} is entirely nodata")
+        lo, hi = (float(v) for v in np.percentile(data[valid], (2.0, 98.0)))
+        if hi <= lo:
+            hi = lo + 1.0
+        scaled = np.clip((data.astype("float64") - lo) / (hi - lo), 0.0, 1.0)
+        gray = (scaled * 255.0).astype("uint8")
+        rgba[..., 0] = gray
+        rgba[..., 1] = gray
+        rgba[..., 2] = gray
+        rgba[..., 3] = np.where(valid, 255, 0)
+
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray(rgba, "RGBA").save(png_path, format="PNG", optimize=True)
+    print(f"[raster] preview {tif_path.name} -> {png_path.name} ({width}x{height}, {mode})")
+    return png_path
 
 
 def console_report(results: Dict[str, Any], elapsed_s: float) -> None:

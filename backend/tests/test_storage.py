@@ -21,8 +21,6 @@ class TestValidAnalysisId(unittest.TestCase):
         self.assertFalse(storage.valid_analysis_id(""))
 
     def test_rejects_lookalike(self):
-        # A near-miss that is still a legal filename must not be accepted just
-        # because it looks uuid-ish.
         self.assertFalse(storage.valid_analysis_id(str(uuid.uuid4()) + "x"))
         self.assertFalse(storage.valid_analysis_id(str(uuid.uuid4()).upper() + " "))
 

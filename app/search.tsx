@@ -68,8 +68,6 @@ async function geocodePlaces(query: string, signal: AbortSignal): Promise<Search
     throw new Error(SEARCH_UNAVAILABLE_MESSAGE)
   } catch (e) {
     if (e instanceof Error && e.name === 'AbortError') throw e
-    // Both paths failed: prefer the direct call's reason (bad key, rate limit)
-    // over the backend proxy's generic "API offline" message.
     throw new Error(directError ?? SEARCH_UNAVAILABLE_MESSAGE)
   }
 }
@@ -88,7 +86,6 @@ function resultCenter(r: SearchResult): LngLat | null {
   const nested = coords as unknown[]
   if (typeof nested[0] === 'number') return null // bare point, no centre needed
 
-  // Polygon -> outer ring; MultiPolygon -> first ring.
   const first = nested[0] as unknown[]
   let ring = nested
   if (Array.isArray(first) && Array.isArray(first[0])) {
@@ -175,8 +172,6 @@ export default function Search({ onResultSelect }: SearchProps) {
     }
   }, [query, queryLongEnough])
 
-  // Derive visibility rather than resetting state from an effect, so shrinking
-  // the query below the threshold hides stale results without a render cascade.
   const visibleResults = queryLongEnough ? results : []
   const showPanel = open && queryLongEnough
 
