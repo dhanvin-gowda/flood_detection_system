@@ -57,6 +57,31 @@ def _datetime_of(feature: Dict[str, Any]) -> str:
     return str(props.get("datetime") or props.get("start_datetime") or "")
 
 
+def _mode_of(feature: Dict[str, Any]) -> Optional[str]:
+    """Acquisition mode (IW, EW, ...) — one half of pair compatibility."""
+    props = feature.get("properties") or {}
+    for key in ("sar:instrument_mode", "sat:instrument_mode", "instrument_mode"):
+        value = props.get(key)
+        if value not in (None, ""):
+            return str(value).upper()
+    return None
+
+
+def _polarizations_of(feature: Dict[str, Any]) -> Optional[Tuple[str, ...]]:
+    """Sorted polarisation set, e.g. ("VH", "VV"); None when not recorded."""
+    props = feature.get("properties") or {}
+    for key in ("sar:polarizations", "polarisations", "polarisation"):
+        value = props.get(key)
+        if value in (None, ""):
+            continue
+        if isinstance(value, str):
+            value = [v for v in value.replace(",", " ").split() if v]
+        if not isinstance(value, (list, tuple, set)):
+            value = [value]
+        return tuple(sorted({str(v).upper() for v in value}))
+    return None
+
+
 class CDSEClient:
     """Sentinel-1 access via the CDSE STAC API and HTTP range reads.
 
@@ -77,8 +102,6 @@ class CDSEClient:
         self.timeout = timeout
         self._token: Optional[str] = None
         self._expires_at: float = 0.0
-
-    # ---- auth -----------------------------------------------------------
 
     @property
     def auth_host(self) -> str:
@@ -127,17 +150,17 @@ class CDSEClient:
     def auth_header(self) -> str:
         return f"Bearer {self._get_token()}"
 
-    # ---- stac -----------------------------------------------------------
-
     def search(
         self,
         bbox: Sequence[float],
         time_from,
         time_to,
         collection: str = "sentinel-1-grd",
-        limit: int = 50,
+        limit: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Return STAC features intersecting the bbox within the time window."""
+        if limit is None:
+            limit = settings.cdse_search_limit
         minx, miny, maxx, maxy = (float(v) for v in bbox)
         params = {
             "collections": collection,

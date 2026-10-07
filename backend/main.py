@@ -1,5 +1,15 @@
 from __future__ import annotations
 
+import sys
+
+# Windows consoles default to a legacy codepage (cp1252 on Western locales)
+# that cannot encode characters the pipeline logs, so print() would raise
+# UnicodeEncodeError and fail the analysis job. Force UTF-8 with a lossy
+# fallback so any stray non-ASCII output degrades instead of crashing.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -8,7 +18,7 @@ from fastapi.responses import FileResponse
 import time
 import uvicorn
 
-from backend import config, jobs, models, pipeline, storage
+from backend import config, jobs, models, pipeline, raster, storage
 from backend.clients import maptiler
 
 
@@ -102,18 +112,82 @@ def geocode(q: str):
 
 @app.get("/backend/rasters/{analysis_id}/{name}")
 def get_raster(analysis_id: str, name: str):
-    # `name` is a URL segment, so it is matched against the exact set the
-    # pipeline writes instead of being joined onto the analysis directory.
-    if name not in pipeline.RASTER_NAMES:
+    # `name` is a URL segment, so it is resolved through a fixed allow-list
+    # instead of being joined onto the analysis directory. `.png` names are
+    # rendered on demand from the matching `.tif` (the masks and scenes are
+    # immutable once the job completes, so the rendered file is cached).
+    if name in pipeline.RASTER_NAMES:
+        tif_name, media_type = name, "image/tiff"
+    elif name.endswith(".png") and (name[:-4] + ".tif") in pipeline.RASTER_NAMES:
+        tif_name, media_type = name[:-4] + ".tif", "image/png"
+    else:
         raise HTTPException(404, "Not found")
     try:
         st = storage.AnalysisState.load(analysis_id)
     except FileNotFoundError:
         raise HTTPException(404, "Not found")
-    path = st.path / name
-    if not path.exists():
+    tif_path = st.path / tif_name
+    if not tif_path.exists():
         raise HTTPException(404, "Not found")
-    return FileResponse(path, media_type="image/tiff")
+    if media_type == "image/tiff":
+        return FileResponse(tif_path, media_type="image/tiff")
+    try:
+        png_path = raster.render_preview(
+            tif_path, st.path / name,
+            mode="mask" if tif_name.startswith("flood_mask") else "gray",
+        )
+    except raster.RasterAnalysisError as exc:
+        raise HTTPException(422, str(exc))
+    return FileResponse(png_path, media_type="image/png")
+
+
+@app.get("/backend/osm/{analysis_id}/{layer}")
+def get_osm(analysis_id: str, layer: str):
+    # OSM layers are fetched by the pipeline alongside the Sentinel path and
+    # land on disk as `osm_{layer}.geojson`; this route only reads the cache,
+    # so Overpass is never hit from a request thread.
+    if layer not in pipeline.OSM_LAYER_NAMES:
+        raise HTTPException(404, "Unknown layer")
+    try:
+        st = storage.AnalysisState.load(analysis_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Not found")
+    path = st.path / f"osm_{layer}.geojson"
+    if not path.exists():
+        raise HTTPException(404, "Layer not available for this analysis")
+    return FileResponse(path, media_type="application/geo+json")
+
+
+# FloodViT vector outputs written offline under `data/<id>/` by the
+# scripts in `scripts/floodvit/` (polygonize -> affected roads/bridges ->
+# disconnected routes/settlements). Each is reachable through
+# `GET /backend/floodvit/{analysis_id}/{name}` where `name` is the key
+# below; the filenames are fixed, so no path ever comes from the request.
+FLOODVIT_FILES = {
+    "polygons": "flood_polygons.geojson",
+    "affected_roads": "affected_roads.geojson",
+    "affected_bridges": "affected_bridges.geojson",
+    "disconnected_routes": "disconnected_routes.geojson",
+    "disconnected_settlements": "disconnected_settlements.geojson",
+}
+
+
+@app.get("/backend/floodvit/{analysis_id}/{name}")
+def get_floodvit_layer(analysis_id: str, name: str):
+    # These files only exist once the offline scripts have been run for an
+    # analysis, so a 404 is a normal "not generated yet" answer. The route
+    # only reads the cache (never Overpass/CDSE), and `AnalysisState.load`
+    # rejects anything that is not a stored UUID before any path is touched.
+    if name not in FLOODVIT_FILES:
+        raise HTTPException(404, "Unknown layer")
+    try:
+        st = storage.AnalysisState.load(analysis_id)
+    except FileNotFoundError:
+        raise HTTPException(404, "Not found")
+    path = st.path / FLOODVIT_FILES[name]
+    if not path.exists():
+        raise HTTPException(404, "FloodViT layer not available for this analysis")
+    return FileResponse(path, media_type="application/geo+json")
 
 
 if __name__ == "__main__":

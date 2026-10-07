@@ -25,11 +25,203 @@ export const DEFAULT_STYLE_URL: string = (() => {
 const INITIAL_CENTER: [number, number] = [0, 20];
 const INITIAL_ZOOM = 1.2;
 
+export type OsmLayerName = 'roads' | 'buildings' | 'settlements';
+
+export const OSM_LAYER_NAMES: OsmLayerName[] = ['roads', 'buildings', 'settlements'];
+
+// Structural stand-in for the GeoJSON types: @types/geojson is not a direct
+// dependency of this package, so maplibre's ambient GeoJSON namespace is only
+// visible under skipLibCheck and cannot be referenced from app code.
+export interface OsmFeatureCollection {
+    type: 'FeatureCollection';
+    features: Array<{
+        type: 'Feature';
+        id?: string;
+        properties: Record<string, unknown> | null;
+        geometry:
+            | { type: 'Point'; coordinates: [number, number] }
+            | { type: 'LineString'; coordinates: [number, number][] }
+            | { type: 'Polygon'; coordinates: [number, number][][] };
+    }>;
+    properties?: Record<string, unknown>;
+}
+
+const OSM_STYLE: Record<OsmLayerName, { color: string }> = {
+    roads: { color: '#7fe8b8' },
+    buildings: { color: '#f0b429' },
+    settlements: { color: '#ffffff' },
+};
+
+const RASTER_SOURCE_ID = 'fs-raster';
+const RASTER_LAYER_ID = 'fs-raster-layer';
+const OSM_SOURCE_ID: Record<OsmLayerName, string> = {
+    roads: 'fs-osm-roads',
+    buildings: 'fs-osm-buildings',
+    settlements: 'fs-osm-settlements',
+};
+const OSM_LAYER_ID: Record<OsmLayerName, string[]> = {
+    roads: ['fs-osm-roads'],
+    buildings: ['fs-osm-buildings'],
+    settlements: ['fs-osm-settlements', 'fs-osm-settlements-label'],
+};
+
+export const FLOODVIT_LAYER_NAMES = [
+    'polygons',
+    'affectedRoads',
+    'affectedBridges',
+    'disconnectedRoutes',
+    'disconnectedSettlements',
+] as const;
+
+export type FloodVitLayerName = (typeof FLOODVIT_LAYER_NAMES)[number];
+
+interface FloodVitSpec {
+    sourceId: string;
+    /** Every map layer fed by the source; visibility is applied to all of them. */
+    layerIds: string[];
+    addLayers: (map: maplibregl.Map, sourceId: string) => void;
+}
+
+const FLOODVIT_SPECS: Record<FloodVitLayerName, FloodVitSpec> = {
+    polygons: {
+        sourceId: 'fs-floodvit',
+        layerIds: ['fs-floodvit-fill'],
+        addLayers: (map, sourceId) => {
+            map.addLayer({
+                id: 'fs-floodvit-fill',
+                type: 'fill',
+                source: sourceId,
+                paint: {
+                    'fill-color': '#22d3ee',
+                    'fill-opacity': 0.45,
+                    'fill-outline-color': '#a5f3fc',
+                },
+            });
+        },
+    },
+    affectedRoads: {
+        sourceId: 'fs-fv-affected-roads',
+        layerIds: ['fs-fv-affected-roads'],
+        addLayers: (map, sourceId) => {
+            map.addLayer({
+                id: 'fs-fv-affected-roads',
+                type: 'line',
+                source: sourceId,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: {
+                    'line-color': '#fb923c',
+                    'line-opacity': 0.95,
+                    'line-width': 2.5,
+                },
+            });
+        },
+    },
+    affectedBridges: {
+        sourceId: 'fs-fv-affected-bridges',
+        layerIds: ['fs-fv-affected-bridges'],
+        addLayers: (map, sourceId) => {
+            map.addLayer({
+                id: 'fs-fv-affected-bridges',
+                type: 'line',
+                source: sourceId,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: {
+                    'line-color': '#f472b6',
+                    'line-opacity': 1,
+                    'line-width': 4,
+                },
+            });
+        },
+    },
+    disconnectedRoutes: {
+        sourceId: 'fs-fv-disconnected-routes',
+        layerIds: ['fs-fv-disconnected-routes'],
+        addLayers: (map, sourceId) => {
+            map.addLayer({
+                id: 'fs-fv-disconnected-routes',
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#ef4444',
+                    'line-opacity': 0.95,
+                    'line-width': 2.2,
+                    'line-dasharray': [1.5, 1.2],
+                },
+            });
+        },
+    },
+    disconnectedSettlements: {
+        sourceId: 'fs-fv-disconnected-settlements',
+        layerIds: [
+            'fs-fv-disconnected-settlements',
+            'fs-fv-disconnected-settlements-label',
+        ],
+        addLayers: (map, sourceId) => {
+            map.addLayer({
+                id: 'fs-fv-disconnected-settlements',
+                type: 'circle',
+                source: sourceId,
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#ef4444',
+                    'circle-stroke-color': '#0f172a',
+                    'circle-stroke-width': 1.5,
+                },
+            });
+            try {
+                map.addLayer({
+                    id: 'fs-fv-disconnected-settlements-label',
+                    type: 'symbol',
+                    source: sourceId,
+                    layout: {
+                        'text-field': ['coalesce', ['get', 'name'], ''],
+                        'text-size': 11,
+                        'text-offset': [0, 0.9],
+                        'text-anchor': 'top',
+                        'text-optional': true,
+                    },
+                    paint: {
+                        'text-color': '#fecaca',
+                        'text-halo-color': 'rgba(15, 23, 42, 0.9)',
+                        'text-halo-width': 1.3,
+                    },
+                });
+            } catch (e) {
+                console.warn('FloodMap: disconnected settlement labels unavailable', e);
+            }
+        },
+    },
+};
+
+export interface RasterOverlay {
+    /** Stretched preview PNG from the backend (before.png / after.png / flood_mask.png). */
+    url: string;
+    /** [west, south, east, north] — the grid the raster was written on. */
+    bounds: [number, number, number, number];
+    /** 0..1 */
+    opacity: number;
+}
+
 export interface FloodMapProps {
 
     styleUrl?: string;
 
     className?: string;
+
+    /** Georeferenced preview image drawn above the basemap; null hides it. */
+    raster?: RasterOverlay | null;
+
+    /** OSM feature collections per layer; absent layers are not drawn. */
+    osm?: Partial<Record<OsmLayerName, OsmFeatureCollection | null>>;
+
+    /** Per-layer checkbox state; defaults to visible when data is present. */
+    visible?: Partial<Record<OsmLayerName, boolean>>;
+
+    /** FloodViT offline outputs per layer; absent layers are not drawn. */
+    floodVit?: Partial<Record<FloodVitLayerName, OsmFeatureCollection | null>>;
+
+    /** Per-layer checkbox state for the FloodViT outputs; defaults to visible when data is present. */
+    floodVitVisible?: Partial<Record<FloodVitLayerName, boolean>>;
 }
 
 export interface FloodMapHandle {
@@ -41,12 +233,261 @@ export interface FloodMapHandle {
     flyTo: (opts: { center?: [number, number]; zoom?: number; duration?: number }) => void;
 }
 
+type MapCorner = [number, number];
+
+function rasterCoordinates(
+    bounds: [number, number, number, number]
+): [MapCorner, MapCorner, MapCorner, MapCorner] {
+    const [west, south, east, north] = bounds;
+    // ImageSource wants corners clockwise starting top-left.
+    return [
+        [west, north],
+        [east, north],
+        [east, south],
+        [west, south],
+    ];
+}
+
 export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
-    ({ styleUrl = DEFAULT_STYLE_URL, className }, ref) => {
+    ({ styleUrl = DEFAULT_STYLE_URL, className, raster, osm, visible, floodVit, floodVitVisible }, ref) => {
         const containerRef = useRef<HTMLDivElement | null>(null);
         const mapInstanceRef = useRef<maplibregl.Map | null>(null);
         const [loading, setLoading] = useState(true);
         const [loadError, setLoadError] = useState<string | null>(null);
+
+        const propsRef = useRef({ raster, osm, visible, floodVit, floodVitVisible });
+        propsRef.current = { raster, osm, visible, floodVit, floodVitVisible };
+        const rasterUrlRef = useRef<string | null>(null);
+        const rasterBoundsRef = useRef<string | null>(null);
+        const rasterOpacityRef = useRef<number | null>(null);
+        // Gate on style-JSON readiness only. map.isStyleLoaded() is false
+        // whenever any tile/glyph/image request is in flight (maplibre's
+        // Style.loaded checks every tile manager + the image manager), which
+        // would make overlay syncs silently skip the renders that matter.
+        const styleReadyRef = useRef(false);
+
+        const syncRaster = (map: maplibregl.Map) => {
+            const overlay = propsRef.current.raster ?? null;
+            const hasSource = !!map.getSource(RASTER_SOURCE_ID);
+
+            if (!overlay) {
+                if (map.getLayer(RASTER_LAYER_ID)) map.removeLayer(RASTER_LAYER_ID);
+                if (hasSource) map.removeSource(RASTER_SOURCE_ID);
+                rasterUrlRef.current = null;
+                rasterBoundsRef.current = null;
+                rasterOpacityRef.current = null;
+                return false;
+            }
+
+            const key = overlay.bounds.join(',');
+            const urlChanged = rasterUrlRef.current !== overlay.url;
+            const boundsChanged = rasterBoundsRef.current !== key;
+
+            if (!hasSource) {
+                map.addSource(RASTER_SOURCE_ID, {
+                    type: 'image',
+                    url: overlay.url,
+                    coordinates: rasterCoordinates(overlay.bounds),
+                });
+                map.addLayer({
+                    id: RASTER_LAYER_ID,
+                    type: 'raster',
+                    source: RASTER_SOURCE_ID,
+                    paint: {
+                        'raster-opacity': overlay.opacity,
+                        'raster-fade-duration': 0,
+                    },
+                });
+            } else {
+                const source = map.getSource(RASTER_SOURCE_ID) as maplibregl.ImageSource;
+                if (urlChanged) {
+                    source.updateImage({
+                        url: overlay.url,
+                        coordinates: rasterCoordinates(overlay.bounds),
+                    });
+                } else if (boundsChanged) {
+                    source.setCoordinates(rasterCoordinates(overlay.bounds));
+                }
+            }
+            if (rasterOpacityRef.current !== overlay.opacity) {
+                map.setPaintProperty(RASTER_LAYER_ID, 'raster-opacity', overlay.opacity);
+            }
+            rasterUrlRef.current = overlay.url;
+            rasterBoundsRef.current = key;
+            rasterOpacityRef.current = overlay.opacity;
+            return true;
+        };
+
+        const removeOsm = (map: maplibregl.Map, name: OsmLayerName) => {
+            for (const id of OSM_LAYER_ID[name]) {
+                if (map.getLayer(id)) map.removeLayer(id);
+            }
+            if (map.getSource(OSM_SOURCE_ID[name])) map.removeSource(OSM_SOURCE_ID[name]);
+        };
+
+        const syncOsm = (map: maplibregl.Map, name: OsmLayerName): boolean => {
+            const data = propsRef.current.osm?.[name] ?? null;
+            const show = propsRef.current.visible?.[name] ?? true;
+            if (!data) {
+                removeOsm(map, name);
+                return false;
+            }
+
+            let added = false;
+            const sourceId = OSM_SOURCE_ID[name];
+            if (!map.getSource(sourceId)) {
+                added = true;
+                map.addSource(sourceId, { type: 'geojson', data });
+                const color = OSM_STYLE[name].color;
+                if (name === 'roads') {
+                    map.addLayer({
+                        id: 'fs-osm-roads',
+                        type: 'line',
+                        source: sourceId,
+                        layout: { 'line-cap': 'round', 'line-join': 'round' },
+                        paint: {
+                            'line-color': color,
+                            'line-opacity': 0.9,
+                            'line-width': [
+                                'match',
+                                ['get', 'highway'],
+                                ['motorway', 'trunk', 'primary'], 3.5,
+                                ['secondary'], 2.5,
+                                ['tertiary', 'residential', 'unclassified', 'service'], 1.6,
+                                1.1,
+                            ],
+                        },
+                    });
+                } else if (name === 'buildings') {
+                    map.addLayer({
+                        id: 'fs-osm-buildings',
+                        type: 'fill',
+                        source: sourceId,
+                        paint: {
+                            'fill-color': color,
+                            'fill-opacity': 0.4,
+                            'fill-outline-color': '#fcd34d',
+                        },
+                    });
+                } else {
+                    map.addLayer({
+                        id: 'fs-osm-settlements',
+                        type: 'circle',
+                        source: sourceId,
+                        paint: {
+                            'circle-radius': 5.5,
+                            'circle-color': color,
+                            'circle-stroke-color': '#0f172a',
+                            'circle-stroke-width': 1.5,
+                        },
+                    });
+                    try {
+                        map.addLayer({
+                            id: 'fs-osm-settlements-label',
+                            type: 'symbol',
+                            source: sourceId,
+                            layout: {
+                                'text-field': ['coalesce', ['get', 'name'], ''],
+                                'text-size': 11,
+                                'text-offset': [0, 0.9],
+                                'text-anchor': 'top',
+                                'text-optional': true,
+                            },
+                            paint: {
+                                'text-color': '#ffffff',
+                                'text-halo-color': 'rgba(15, 23, 42, 0.9)',
+                                'text-halo-width': 1.3,
+                            },
+                        });
+                    } catch (e) {
+                        console.warn('FloodMap: settlement labels unavailable', e);
+                    }
+                }
+            } else {
+                (map.getSource(sourceId) as maplibregl.GeoJSONSource).setData(data);
+            }
+
+            const visibility = show ? 'visible' : 'none';
+            for (const id of OSM_LAYER_ID[name]) {
+                if (map.getLayer(id)) {
+                    map.setLayoutProperty(id, 'visibility', visibility);
+                }
+            }
+            return added;
+        };
+
+        const syncFloodVit = (map: maplibregl.Map): boolean => {
+            let added = false;
+            for (const name of FLOODVIT_LAYER_NAMES) {
+                const spec = FLOODVIT_SPECS[name];
+                const data = propsRef.current.floodVit?.[name] ?? null;
+                const show = propsRef.current.floodVitVisible?.[name] ?? true;
+                if (!data) {
+                    for (const id of spec.layerIds) {
+                        if (map.getLayer(id)) map.removeLayer(id);
+                    }
+                    if (map.getSource(spec.sourceId)) map.removeSource(spec.sourceId);
+                    continue;
+                }
+
+                if (!map.getSource(spec.sourceId)) {
+                    added = true;
+                    map.addSource(spec.sourceId, { type: 'geojson', data });
+                    spec.addLayers(map, spec.sourceId);
+                } else {
+                    (map.getSource(spec.sourceId) as maplibregl.GeoJSONSource).setData(data);
+                }
+
+                const visibility = show ? 'visible' : 'none';
+                for (const id of spec.layerIds) {
+                    if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', visibility);
+                }
+            }
+            return added;
+        };
+
+        const applyOverlays = () => {
+            const map = mapInstanceRef.current;
+            if (!map || !styleReadyRef.current) return;
+            try {
+                const addedRaster = syncRaster(map);
+                const addedFloodVit = syncFloodVit(map);
+                let addedOsm = false;
+                for (const name of OSM_LAYER_NAMES) {
+                    addedOsm = syncOsm(map, name) || addedOsm;
+                }
+                if (addedRaster || addedFloodVit || addedOsm) {
+                    // Added sources land on top of everything; restack so the
+                    // order stays basemap -> raster -> FloodViT flood area ->
+                    // OSM roads/buildings/settlements -> FloodViT affected
+                    // roads -> bridges -> disconnected routes/settlements.
+                    const stack = [
+                        RASTER_LAYER_ID,
+                        'fs-floodvit-fill',
+                        'fs-osm-roads',
+                        'fs-osm-buildings',
+                        'fs-osm-settlements',
+                        'fs-osm-settlements-label',
+                        'fs-fv-affected-roads',
+                        'fs-fv-affected-bridges',
+                        'fs-fv-disconnected-routes',
+                        'fs-fv-disconnected-settlements',
+                        'fs-fv-disconnected-settlements-label',
+                    ];
+                    for (const id of stack) {
+                        if (map.getLayer(id)) map.moveLayer(id);
+                    }
+                }
+            } catch (e) {
+                console.error('FloodMap: overlay sync failed', e);
+            }
+        };
+
+        // The load handler is registered once inside the mount effect, so it
+        // reaches applyOverlays through a ref instead of a stale closure
+        // (and exhaustive-deps stays happy without re-creating the map).
+        const overlaysRef = useRef(applyOverlays);
+        overlaysRef.current = applyOverlays;
 
         useEffect(() => {
             if (!containerRef.current || mapInstanceRef.current) return;
@@ -70,25 +511,48 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
             map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
 
             map.on('load', () => {
+                styleReadyRef.current = true;
                 setLoading(false);
+                // A fatal error can land just before the style finishes (slow
+                // style + fast failure); once we are up, drop any stale banner.
+                setLoadError(null);
+                overlaysRef.current();
             });
 
             map.on('error', (e) => {
-                console.error('FloodMap: map error', e?.error ?? e);
-                setLoadError(
-                    'Base map failed to load — check network access to the style/tile provider.'
-                );
-                setLoading(false);
+                const err = (e as { error?: unknown })?.error ?? e;
+                // MapLibre emits `error` for single-tile fetch failures too
+                // (e.g. a transient network blip: "AJAXError: Failed to fetch
+                // (0)"). Those recover on their own when tiles re-enter the
+                // viewport, so only a failure *before* the style loaded means
+                // the basemap itself is unusable and worth the banner.
+                if (!styleReadyRef.current) {
+                    console.error('FloodMap: map error', err);
+                    setLoadError(
+                        'Base map failed to load — check network access to the style/tile provider.'
+                    );
+                    setLoading(false);
+                } else {
+                    console.warn('FloodMap: resource error (will retry on interaction)', err);
+                }
             });
 
             return () => {
                 map.remove();
                 mapInstanceRef.current = null;
+                styleReadyRef.current = false;
+                rasterUrlRef.current = null;
+                rasterBoundsRef.current = null;
+                rasterOpacityRef.current = null;
                 if (typeof window !== 'undefined') {
                     delete (window as unknown as { __fsMap?: maplibregl.Map }).__fsMap;
                 }
             };
         }, [styleUrl]);
+
+        useEffect(() => {
+            applyOverlays();
+        });
 
         useEffect(() => {
             const el = containerRef.current;
@@ -121,7 +585,7 @@ export const FloodMap = forwardRef<FloodMapHandle, FloodMapProps>(
                 if (!document.fullscreenElement) {
                     el.requestFullscreen?.();
                 } else {
-                    document.exitFullscreen?.();
+                    document.exitFullscreen();
                 }
             },
         }));

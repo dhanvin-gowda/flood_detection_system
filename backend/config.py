@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import os
@@ -44,6 +45,21 @@ class Settings(BaseSettings):
 
     next_public_maptiler_key: str = Field(default='', alias='NEXT_PUBLIC_MAPTILER_KEY')
     next_public_mapbox_token: str = Field(default='', alias='NEXT_PUBLIC_MAPBOX_TOKEN')
+
+    # OpenStreetMap Overpass. OSM is fetched alongside the Sentinel path, so a
+    # slow or dead Overpass instance must never stall the analysis: the pipeline
+    # joins these futures with osm_timeout_s and degrades per layer on failure.
+    osm_overpass_url: str = Field(
+        default='https://overpass-api.de/api/interpreter',
+        alias='OSM_OVERPASS_URL',
+    )
+    osm_timeout_s: float = Field(default=90.0, alias='OSM_TIMEOUT_S')
+
+    max_before_days: int = Field(default=60, alias='MAX_BEFORE_DAYS')
+    max_after_days: int = Field(default=30, alias='MAX_AFTER_DAYS')
+    # STAC page size. A 60-day before window returns ~55 features for a
+    # mid-size AOI, which the previous hard-coded limit of 50 truncated.
+    cdse_search_limit: int = Field(default=200, alias='CDSE_SEARCH_LIMIT')
 
     # Flood detection tuning. CDSE distributes Sentinel-1 GRDH as uncalibrated
     # uint16 amplitude (DN), not calibrated sigma0, so no absolute backscatter
