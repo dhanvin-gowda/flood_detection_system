@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import sys
 
@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse
 import time
 import uvicorn
 
-from backend import config, jobs, models, pipeline, raster, storage
+from backend import config, jobs, models, pipeline, raster, storage, impact_summary, impact_summary
 from backend.clients import maptiler
 
 
@@ -169,6 +169,8 @@ FLOODVIT_FILES = {
     "affected_bridges": "affected_bridges.geojson",
     "disconnected_routes": "disconnected_routes.geojson",
     "disconnected_settlements": "disconnected_settlements.geojson",
+    "hospitals": "hospitals.geojson",
+    "hospital_route": "hospital_route.geojson",
 }
 
 
@@ -192,3 +194,38 @@ def get_floodvit_layer(analysis_id: str, name: str):
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+
+
+@app.get("/backend/analysis/{analysis_id}/impact-summary", response_model=models.ImpactSummaryResponse)
+def get_impact_summary(analysis_id: str):
+    try:
+        st = storage.AnalysisState.load(analysis_id)
+        data = st.get()
+        results = data.get('results') or {}
+        impact = data.get('impact_summary') or None
+        if not impact:
+            # try to load floodvit layers from disk if present
+            floodvit_layers = {}
+            for name, fname in FLOODVIT_FILES.items():
+                try:
+                    import json
+                    pth = st.path / fname
+                    if pth.exists():
+                        with open(pth, 'r', encoding='utf-8') as f:
+                            floodvit_layers[name] = json.load(f)
+                except Exception:
+                    pass
+            # generate
+            res = impact_summary.generate_impact_summary(analysis_id, results, floodvit_layers)
+            st.update(impact_summary=res)
+            impact = res['impact_summary']
+        else:
+            # normalize
+            impact = impact.get('impact_summary') if isinstance(impact, dict) and 'impact_summary' in impact else impact
+        return models.ImpactSummaryResponse(
+            analysis_id=analysis_id,
+            metrics=results,
+            impact_summary=impact,
+        )
+    except FileNotFoundError:
+        raise HTTPException(404, "Not found")

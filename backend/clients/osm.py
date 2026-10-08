@@ -11,7 +11,8 @@ from backend import config
 # degrades alone instead of taking the others with it. The `out` mode sits
 # outside the union block, which is where Overpass QL requires it: `out geom`
 # inlines way geometry so no follow-up node lookup is needed, while
-# settlements only need a centre point because they render as labels.
+# settlements and hospitals only need a centre point because they render as
+# labels/markers.
 _LAYERS = {
     "roads": (
         'way["highway"]({bbox});',
@@ -25,6 +26,12 @@ _LAYERS = {
         'node["place"]({bbox});\nway["place"]({bbox});\nrelation["place"]({bbox});',
         "center",
     ),
+    "hospitals": (
+        'node["amenity"="hospital"]({bbox});\n'
+        'way["amenity"="hospital"]({bbox});\n'
+        'relation["amenity"="hospital"]({bbox});',
+        "center",
+    ),
 }
 
 OSM_LAYERS = tuple(_LAYERS)
@@ -33,6 +40,7 @@ _LAYER_PROPERTIES = {
     "roads": ("highway", "name", "ref", "surface", "bridge", "tunnel"),
     "buildings": ("building", "name", "building:levels"),
     "settlements": ("name", "place", "population", "name:en"),
+    "hospitals": ("name", "amenity", "emergency", "healthcare", "operator"),
 }
 
 
@@ -92,7 +100,7 @@ def elements_to_geojson(elements: Sequence[Dict[str, Any]], layer: str) -> Dict[
 
     Roads become LineStrings, closed building ways become Polygons (an unclosed
     ``building`` way has no interior to fill and is skipped), and settlements
-    collapse to their centre point because they are rendered as labels.
+    and hospitals collapse to their centre point (label/marker rendering).
     """
     if layer not in _LAYERS:
         raise ValueError(f"unknown OSM layer {layer!r}, expected one of {OSM_LAYERS}")
@@ -102,7 +110,7 @@ def elements_to_geojson(elements: Sequence[Dict[str, Any]], layer: str) -> Dict[
         tags = el.get("tags") or {}
         geom: Optional[Dict[str, Any]] = None
 
-        if layer == "settlements":
+        if layer in ("settlements", "hospitals"):
             if el.get("type") == "node" and "lat" in el and "lon" in el:
                 geom = {
                     "type": "Point",

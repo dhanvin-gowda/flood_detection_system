@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import time
@@ -7,7 +7,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, wait as futures_wait
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from backend import config, raster, storage
+from backend import config, raster, storage, impact_summary
 from backend.clients.cdse import (
     CDSEClient,
     _datetime_of,
@@ -42,7 +42,7 @@ def build_windows(
 
     The before window covers [event - max_before_days, event): the newest
     usable reference is the day before the event, because an acquisition on
-    the event day is ambiguous — the flood may already have reached the
+    the event day is ambiguous â€” the flood may already have reached the
     swath. The after window covers [event + 1, event + max_after_days]; the
     two are disjoint by construction, so the old overlap-shifting loop is
     unnecessary. Both limits come from config so they can be widened without
@@ -143,13 +143,13 @@ def choose_pair(
     the reprojection in ``raster.fetch_scene`` aligns the grid, but neither
     the incidence angle nor the radiometric calibration, so a cross-orbit
     difference map would be dominated by that mismatch rather than by water.
-    Same relative orbit is therefore mandatory — never relaxed in favour of
+    Same relative orbit is therefore mandatory â€” never relaxed in favour of
     date proximity. The ranking, best first:
 
     1. same relative orbit (hard filter);
     2. same acquisition mode and polarisation when both scenes record them;
-    3. smallest max(event - before, after - event) — closest to the event;
-    4. smallest total span (after - before) — tightest bracket;
+    3. smallest max(event - before, after - event) â€” closest to the event;
+    4. smallest total span (after - before) â€” tightest bracket;
     5. earliest timestamps, only to stay deterministic for slice products.
 
     If nothing matches on mode/pol, the best same-orbit pair is still
@@ -228,7 +228,7 @@ def _fetch_one_osm_layer(
     must not be able to fail an analysis whose Sentinel path is healthy.
 
     ``stagger_s`` offsets the sibling layer threads so they do not hit the
-    same Overpass mirror in one burst — the public instances rate-limit that.
+    same Overpass mirror in one burst â€” the public instances rate-limit that.
     """
     if stagger_s:
         time.sleep(stagger_s)
