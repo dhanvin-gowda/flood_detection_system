@@ -1,4 +1,4 @@
-
+﻿
 from __future__ import annotations
 
 import os
@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     # log-amplitude difference and gates on a data-derived percentile.
     flood_threshold_db: float = Field(default=-3.0, alias='FLOOD_THRESHOLD_DB')
     flood_after_percentile: float = Field(default=35.0, alias='FLOOD_AFTER_PERCENTILE')
+    groq_api_key: str = Field(default='', alias='GROQ_API_KEY')
+    groq_model: str = Field(default='llama-3.1-8b-instant', alias='GROQ_MODEL')
 
     class Config:
         env_file = '.env'
@@ -77,3 +79,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

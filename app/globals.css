@@ -118,6 +118,14 @@ input {
   .fs-body {
     grid-template-columns: 260px 1fr 280px;
   }
+  /* Four metrics must stay on one row in the narrower map column. */
+  .fs-impact-bar {
+    gap: 16px;
+    padding: 10px 14px;
+  }
+  .fs-impact-stats {
+    gap: 20px;
+  }
 }
 
 /* ========================================================================
@@ -656,8 +664,8 @@ input {
   border-radius: var(--radius-sm);
   padding: 10px 11px;
   /* Eight rows (3 OSM + 5 FloodViT) must not run into the bottom toolbar
-     on short viewports. */
-  max-height: calc(100vh - 270px);
+     or the Impact Summary overlay on short viewports. */
+  max-height: calc(100vh - 340px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -736,10 +744,11 @@ input {
   min-width: 0;
 }
 
-/* Bottom map toolbar */
+/* Bottom map toolbar — lifted clear of the Impact Summary overlay that now
+   occupies the bottom edge of the map column. */
 .fs-map-bottombar {
   position: absolute;
-  bottom: 14px;
+  bottom: 84px;
   left: 14px;
   right: 14px;
   display: flex;
@@ -892,6 +901,23 @@ input {
   font-weight: 700;
 }
 
+.fs-report-list {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.fs-report-list li {
+  margin-bottom: 4px;
+}
+
+.fs-report-list--muted {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
 .fs-impact-note {
   display: flex;
   gap: 9px;
@@ -971,14 +997,24 @@ input {
 /* ========================================================================
    BOTTOM IMPACT SUMMARY
    ======================================================================== */
+/* Bottom impact summary — overlays the bottom edge of the map column only,
+   floating above the scale bar / view toggle toolbar (which is lifted clear
+   below), so neither covers the other. Translucent near-black panel to match
+   the command-centre chrome floating over the basemap. */
 .fs-impact-bar {
-  flex-shrink: 0;
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 36px;
-  padding: 14px 20px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-subtle);
+  padding: 12px 20px;
+  background: rgba(13, 17, 23, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
 }
 
 .fs-impact-bar__title {
@@ -991,12 +1027,6 @@ input {
   letter-spacing: 0.06em;
   color: var(--text-tertiary);
   margin-bottom: 3px;
-}
-
-.fs-impact-bar__basin {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--text-primary);
 }
 
 .fs-impact-bar__date {
@@ -1159,11 +1189,73 @@ input {
   background: transparent;
 }
 
+/* Marker popup content (app/markerPopups.ts) — key/value rows in the same
+   visual language as .fs-analyze-result: dim uppercase keys, primary values
+   right-aligned with tabular figures. */
+.fs-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+}
+
+.fs-popup__title {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding-right: 18px; /* keep clear of the popup close button */
+}
+
+.fs-popup__chip {
+  align-self: flex-start;
+  color: var(--mint);
+  background: var(--mint-dim);
+  border: 1px solid var(--mint-border);
+  border-radius: var(--radius-xs);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+}
+
+.fs-popup__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fs-popup__key {
+  color: var(--text-tertiary);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.fs-popup__val {
+  color: var(--text-primary);
+  font-size: 11.5px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.fs-popup__note {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  line-height: 1.45;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 6px;
+}
+
 /* ------------------------------------------------------------------------
    MapLibre attribution control — MapTiler and OpenStreetMap both require
    visible credit, so the control is enabled in code (map.tsx). It would
    otherwise render underneath .fs-map-bottombar, which spans the full
-   width at z-index 5, so lift it clear of that bar and theme it dark.
+   width at z-index 5 (now at bottom: 84px, above the Impact Summary
+   overlay), so lift it clear of that bar and theme it dark.
    ------------------------------------------------------------------------ */
 .maplibregl-ctrl-attrib {
   background: rgba(13, 17, 23, 0.85) !important;
@@ -1172,7 +1264,7 @@ input {
   color: var(--text-tertiary);
   font-family: var(--font-sans);
   font-size: 10px;
-  margin: 0 14px 62px 0;
+  margin: 0 14px 122px 0;
 }
 
 .maplibregl-ctrl-attrib a {
