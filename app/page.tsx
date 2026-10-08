@@ -31,6 +31,7 @@ type AnalysisState = {
     before?: { beginPosition?: string; relativeOrbitNumber?: string | number } | null;
     after?: { beginPosition?: string; relativeOrbitNumber?: string | number } | null;
     results?: Record<string, unknown> | null;
+    impact_summary?: unknown;
 };
 
 const PHASE_LABELS: Record<AnalysisPhase, string> = {
@@ -185,22 +186,13 @@ export const TopNavbar: React.FC = () => {
                     <span className="fs-brand__name">FloodScope</span>
                 </div>
                 <div className="fs-navbar__divider" />
-                <span className="fs-navbar__label">FLOOD INTELLIGENCE</span>
-                <span className="fs-badge fs-badge--mint">
-                    <span className="fs-dot" />
-                    SYSTEM READY
-                </span>
+
+
             </div>
 
             <nav className="fs-navbar__right">
-                <button className="fs-navlink">Case Study</button>
-                <button className="fs-navlink">Data Sources</button>
-                <button className="fs-navlink">About</button>
-                <button className="fs-btn--live">
-                    <span className="fs-dot" />
-                    LIVE ANALYSIS
-                    <IconChevronDown size={12} />
-                </button>
+
+
             </nav>
         </header>
     );
@@ -315,9 +307,8 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                             </div>
                             <div className="fs-imagery-card__status">
                                 <span
-                                    className={`fs-selector__status-dot ${
-                                        state?.before ? '' : 'fs-selector__status-dot--pending'
-                                    }`}
+                                    className={`fs-selector__status-dot ${state?.before ? '' : 'fs-selector__status-dot--pending'
+                                        }`}
                                 />
                                 {state?.before
                                     ? `Orbit ${state.before.relativeOrbitNumber}`
@@ -331,9 +322,8 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                             </div>
                             <div className="fs-imagery-card__status">
                                 <span
-                                    className={`fs-selector__status-dot ${
-                                        state?.after ? '' : 'fs-selector__status-dot--pending'
-                                    }`}
+                                    className={`fs-selector__status-dot ${state?.after ? '' : 'fs-selector__status-dot--pending'
+                                        }`}
                                 />
                                 {state?.after
                                     ? `Orbit ${state.after.relativeOrbitNumber}`
@@ -409,9 +399,8 @@ export const AnalysisSidebar: React.FC<AnalysisSidebarProps> = ({
                             (phase === 'downloading' && i <= 1);
                         return (
                             <div
-                                className={`fs-pipeline__item ${
-                                    active ? 'fs-pipeline__item--active' : ''
-                                } ${done ? 'fs-pipeline__item--done' : ''}`}
+                                className={`fs-pipeline__item ${active ? 'fs-pipeline__item--active' : ''
+                                    } ${done ? 'fs-pipeline__item--done' : ''}`}
                                 key={step}
                             >
                                 <span className="fs-pipeline__check">{done ? <IconCheck /> : i + 1}</span>
@@ -437,6 +426,7 @@ export type MapPlaceholderProps = {
     aoi: AreaOfInterest | null;
     onAoiSelect: (aoi: AreaOfInterest) => void;
     floodAreaKm2: number | null;
+    eventDate: string | null;
     analysisId: string | null;
     phase: AnalysisPhase | null;
 };
@@ -448,10 +438,10 @@ const OSM_LAYER_META: Array<{
     label: string;
     color: string;
 }> = [
-    { id: 'roads', label: 'Roads', color: 'var(--mint)' },
-    { id: 'buildings', label: 'Buildings', color: '#f0b429' },
-    { id: 'settlements', label: 'Settlements', color: '#ffffff' },
-];
+        { id: 'roads', label: 'Roads', color: 'var(--mint)' },
+        { id: 'buildings', label: 'Buildings', color: '#f0b429' },
+        { id: 'settlements', label: 'Settlements', color: '#ffffff' },
+    ];
 
 const FLOODVIT_ENDPOINTS: Record<FloodVitLayerName, string> = {
     polygons: 'polygons',
@@ -459,6 +449,8 @@ const FLOODVIT_ENDPOINTS: Record<FloodVitLayerName, string> = {
     affectedBridges: 'affected_bridges',
     disconnectedRoutes: 'disconnected_routes',
     disconnectedSettlements: 'disconnected_settlements',
+    hospitals: 'hospitals',
+    hospitalRoute: 'hospital_route',
 };
 
 const FLOODVIT_LAYER_META: Array<{
@@ -466,12 +458,14 @@ const FLOODVIT_LAYER_META: Array<{
     label: string;
     color: string;
 }> = [
-    { id: 'polygons', label: 'FloodViT flood area', color: '#22d3ee' },
-    { id: 'affectedRoads', label: 'Affected roads', color: '#fb923c' },
-    { id: 'affectedBridges', label: 'Potentially affected bridges', color: '#f472b6' },
-    { id: 'disconnectedRoutes', label: 'Disconnected routes', color: '#ef4444' },
-    { id: 'disconnectedSettlements', label: 'Disconnected settlements', color: '#ef4444' },
-];
+        { id: 'polygons', label: 'FloodViT flood area', color: '#22d3ee' },
+        { id: 'affectedRoads', label: 'Affected roads', color: '#fb923c' },
+        { id: 'affectedBridges', label: 'Potentially affected bridges', color: '#f472b6' },
+        { id: 'disconnectedRoutes', label: 'Disconnected routes', color: '#ef4444' },
+        { id: 'disconnectedSettlements', label: 'Disconnected settlements', color: '#ef4444' },
+        { id: 'hospitals', label: 'Hospitals (nearest reachable)', color: '#38bdf8' },
+        { id: 'hospitalRoute', label: 'Route to nearest hospital', color: '#4ade80' },
+    ];
 
 const FLOODVIT_LAYER_IDS = Object.keys(FLOODVIT_ENDPOINTS) as FloodVitLayerName[];
 
@@ -481,6 +475,8 @@ const floodVitStatusMap = (value: OsmLayerStatus): Record<FloodVitLayerName, Osm
     affectedBridges: value,
     disconnectedRoutes: value,
     disconnectedSettlements: value,
+    hospitals: value,
+    hospitalRoute: value,
 });
 
 const RASTER_FILE: Record<'before' | 'flood' | 'after', string> = {
@@ -493,6 +489,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     aoi,
     onAoiSelect,
     floodAreaKm2,
+    eventDate,
     analysisId,
     phase,
 }) => {
@@ -519,6 +516,8 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
         affectedBridges: true,
         disconnectedRoutes: true,
         disconnectedSettlements: true,
+        hospitals: true,
+        hospitalRoute: true,
     });
     // The FloodViT files are written by offline scripts *after* the analysis
     // completes, so the one-shot fetch on completion can easily 404; bumping
@@ -609,6 +608,42 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
             ? floodVitBundle.status
             : floodVitStatusMap(dataKey ? 'loading' : 'idle');
 
+    // Impact Summary metrics, derived from the FloodViT GeoJSON collections
+    // already fetched above. Each stays null (rendered as "—") until its own
+    // layer lands, so loading, missing-file (404) and error states never show
+    // invented numbers. Roads have no collection-level total in the backend,
+    // so the length is the sum of the backend-provided per-feature values.
+    const collectionFeatureCount = (collection: OsmFeatureCollection | null | undefined) => {
+        if (!collection) return null;
+        const declared = Number(collection.properties?.featureCount);
+        if (Number.isFinite(declared) && declared >= 0) return declared;
+        return Number.isFinite(collection.features.length) ? collection.features.length : null;
+    };
+
+    const affectedRoadsKm =
+        floodVitStatus.affectedRoads === 'ok' && floodVitData.affectedRoads
+            ? (() => {
+                let totalM = 0;
+                let found = false;
+                for (const feature of floodVitData.affectedRoads.features) {
+                    const length = feature.properties?.affectedLengthM;
+                    if (typeof length === 'number' && Number.isFinite(length)) {
+                        totalM += length;
+                        found = true;
+                    }
+                }
+                return found ? totalM / 1000 : null;
+            })()
+            : null;
+    const affectedBridges =
+        floodVitStatus.affectedBridges === 'ok'
+            ? collectionFeatureCount(floodVitData.affectedBridges)
+            : null;
+    const cutOffSettlements =
+        floodVitStatus.disconnectedSettlements === 'ok'
+            ? collectionFeatureCount(floodVitData.disconnectedSettlements)
+            : null;
+
     const handleRefreshLayers = () => {
         if (!dataKey || refreshing) return;
         setRefreshing(true);
@@ -618,10 +653,10 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
     const raster: RasterOverlay | null =
         analysisId && phase === 'completed' && aoi
             ? {
-                  url: `/backend/rasters/${analysisId}/${RASTER_FILE[activeView]}`,
-                  bounds: [aoi.bbox[0], aoi.bbox[1], aoi.bbox[2], aoi.bbox[3]],
-                  opacity: opacity / 100,
-              }
+                url: `/backend/rasters/${analysisId}/${RASTER_FILE[activeView]}`,
+                bounds: [aoi.bbox[0], aoi.bbox[1], aoi.bbox[2], aoi.bbox[3]],
+                opacity: opacity / 100,
+            }
             : null;
 
     return (
@@ -664,7 +699,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                 )}
             </div>
 
-                        <div className="fs-map-controls">
+            <div className="fs-map-controls">
                 <button className="fs-map-controls__btn" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
                     <IconPlus />
                 </button>
@@ -683,7 +718,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                 </button>
             </div>
 
-                        <div className="fs-layers-panel">
+            <div className="fs-layers-panel">
                 <div className="fs-layers-panel__header">
                     <IconLayers />
                     LAYERS
@@ -763,7 +798,7 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                 })}
             </div>
 
-                        <div className="fs-map-bottombar">
+            <div className="fs-map-bottombar">
                 <div className="fs-map-bottombar__left">
                     <div className="fs-scale-bar">
                         <span className="fs-scale-bar__line" />
@@ -798,12 +833,66 @@ export const MapPlaceholder: React.FC<MapPlaceholderProps> = ({
                     </div>
                 </div>
             </div>
+
+            <ImpactSummary
+                floodAreaKm2={floodAreaKm2}
+                eventDate={eventDate}
+                affectedRoadsKm={affectedRoadsKm}
+                affectedBridges={affectedBridges}
+                cutOffSettlements={cutOffSettlements}
+            />
         </section>
     );
 };
 
-export const IntelligenceSidebar: React.FC = () => {
+type CriticalLocationEntry = string | { name?: string; reason?: string };
+
+type ImpactSummaryBody = {
+    overview?: string;
+    infrastructure_impact?: string;
+    settlement_impact?: string;
+    critical_locations?: CriticalLocationEntry[];
+    recommended_actions?: string[];
+    limitations?: string[];
+};
+
+// The backend may store either the full generate_impact_summary() dict
+// ({analysis_id, payload, impact_summary, status, error}) or just the inner
+// body, so unwrap the outer wrapper when it is present.
+function normalizeImpactSummary(raw: unknown): ImpactSummaryBody | null {
+    if (!raw || typeof raw !== 'object') return null;
+    const outer = raw as Record<string, unknown>;
+    const inner =
+        outer.impact_summary && typeof outer.impact_summary === 'object'
+            ? (outer.impact_summary as Record<string, unknown>)
+            : outer;
+    const str = (v: unknown): string | undefined =>
+        typeof v === 'string' && v.trim() ? v : undefined;
+    const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
+    const body: ImpactSummaryBody = {
+        overview: str(inner.overview),
+        infrastructure_impact: str(inner.infrastructure_impact),
+        settlement_impact: str(inner.settlement_impact),
+        critical_locations: list(inner.critical_locations) as CriticalLocationEntry[],
+        recommended_actions: list(inner.recommended_actions) as string[],
+        limitations: list(inner.limitations) as string[],
+    };
+    const hasContent =
+        Boolean(body.overview || body.infrastructure_impact || body.settlement_impact) ||
+        (body.critical_locations?.length ?? 0) > 0 ||
+        (body.recommended_actions?.length ?? 0) > 0 ||
+        (body.limitations?.length ?? 0) > 0;
+    return hasContent ? body : null;
+}
+
+const criticalLocationText = (entry: CriticalLocationEntry): string =>
+    typeof entry === 'string'
+        ? entry
+        : [entry?.name, entry?.reason].filter(Boolean).join(' — ');
+
+export const IntelligenceSidebar: React.FC<{ state?: AnalysisState | null }> = ({ state }) => {
     const [lang, setLang] = useState<'en' | 'np'>('en');
+    const summary = normalizeImpactSummary(state?.impact_summary);
 
     return (
         <aside className="fs-panel fs-panel--right">
@@ -849,17 +938,74 @@ export const IntelligenceSidebar: React.FC = () => {
                     </button>
                 </div>
 
-                <p className="fs-report-text">
-                    {lang === 'en' ? (
-                        <>
-                            Flood analysis identifies potentially affected areas from Sentinel-1
-                            imagery. Infrastructure and connectivity impacts are reported once
-                            verified source data becomes available.
-                        </>
-                    ) : (
-                        <>बाढी विश्लेषणले सेन्टिनल-1 तस्बिरबाट सम्भावित प्रभावित क्षेत्र पहिचान गर्छ।</>
-                    )}
-                </p>
+                {summary ? (
+                    <div>
+                        {summary.overview && <p className="fs-report-text">{summary.overview}</p>}
+
+                        {summary.infrastructure_impact && (
+                            <div className="fs-footnote-section">
+                                <div className="fs-footnote-section__title">INFRASTRUCTURE IMPACT</div>
+                                <div className="fs-footnote-section__body">
+                                    {summary.infrastructure_impact}
+                                </div>
+                            </div>
+                        )}
+
+                        {summary.settlement_impact && (
+                            <div className="fs-footnote-section">
+                                <div className="fs-footnote-section__title">SETTLEMENT IMPACT</div>
+                                <div className="fs-footnote-section__body">
+                                    {summary.settlement_impact}
+                                </div>
+                            </div>
+                        )}
+
+                        {(summary.critical_locations?.length ?? 0) > 0 && (
+                            <div className="fs-footnote-section">
+                                <div className="fs-footnote-section__title">CRITICAL LOCATIONS</div>
+                                <ul className="fs-report-list">
+                                    {summary.critical_locations!.map((entry, i) => (
+                                        <li key={i}>{criticalLocationText(entry)}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {(summary.recommended_actions?.length ?? 0) > 0 && (
+                            <div className="fs-footnote-section">
+                                <div className="fs-footnote-section__title">RECOMMENDED ACTIONS</div>
+                                <ul className="fs-report-list">
+                                    {summary.recommended_actions!.map((action, i) => (
+                                        <li key={i}>{action}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {(summary.limitations?.length ?? 0) > 0 && (
+                            <div className="fs-footnote-section">
+                                <div className="fs-footnote-section__title">LIMITATIONS</div>
+                                <ul className="fs-report-list fs-report-list--muted">
+                                    {summary.limitations!.map((item, i) => (
+                                        <li key={i}>{item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <p className="fs-report-text">
+                        {lang === 'en' ? (
+                            <>
+                                Flood analysis identifies potentially affected areas from Sentinel-1
+                                imagery. Infrastructure and connectivity impacts are reported once
+                                verified source data becomes available.
+                            </>
+                        ) : (
+                            <>बाढी विश्लेषणले सेन्टिनल-1 तस्बिरबाट सम्भावित प्रभावित क्षेत्र पहिचान गर्छ।</>
+                        )}
+                    </p>
+                )}
 
                 <div className="fs-impact-note">
                     <IconInfo />
@@ -898,27 +1044,62 @@ export const IntelligenceSidebar: React.FC = () => {
     );
 };
 
-export const ImpactSummary: React.FC<{ floodAreaKm2: number | null }> = ({ floodAreaKm2 }) => {
+export const ImpactSummary: React.FC<{
+    floodAreaKm2: number | null;
+    eventDate: string | null;
+    affectedRoadsKm: number | null;
+    affectedBridges: number | null;
+    cutOffSettlements: number | null;
+}> = ({ floodAreaKm2, eventDate, affectedRoadsKm, affectedBridges, cutOffSettlements }) => {
+    const count = (value: number | null): string =>
+        value !== null ? String(value).padStart(2, '0') : '—';
+
     const stats: Array<{
         label: string;
         value: string;
         unit: string;
         color: string;
     }> = [
-        {
-            label: 'FLOOD AREA',
-            value: floodAreaKm2 !== null ? floodAreaKm2.toFixed(1) : '—',
-            unit: floodAreaKm2 !== null ? 'km²' : '',
-            color: 'var(--red)',
-        },
-    ];
+            {
+                label: 'FLOOD AREA',
+                value: floodAreaKm2 !== null ? floodAreaKm2.toFixed(1) : '—',
+                unit: floodAreaKm2 !== null ? 'km²' : '',
+                color: 'var(--red)',
+            },
+            {
+                label: 'AFFECTED ROADS',
+                value: affectedRoadsKm !== null ? affectedRoadsKm.toFixed(1) : '—',
+                unit: affectedRoadsKm !== null ? 'km' : '',
+                color: '#fb923c',
+            },
+            {
+                label: 'AFFECTED BRIDGES',
+                value: count(affectedBridges),
+                unit: '',
+                color: '#f472b6',
+            },
+            {
+                label: 'POTENTIALLY CUT-OFF',
+                value: count(cutOffSettlements),
+                unit: cutOffSettlements !== null ? 'settlements' : '',
+                color: '#ef4444',
+            },
+        ];
+
+    const dateLabel = (() => {
+        if (!eventDate) return null;
+        const d = new Date(eventDate);
+        if (Number.isNaN(d.getTime())) return null;
+        return `${String(d.getUTCDate()).padStart(2, '0')} ${d
+            .toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })
+            .toUpperCase()} ${d.getUTCFullYear()} · SAR ANALYSIS`;
+    })();
 
     return (
         <footer className="fs-impact-bar">
             <div className="fs-impact-bar__title">
                 <div className="fs-impact-bar__kicker">IMPACT SUMMARY</div>
-                <div className="fs-impact-bar__basin">Karnali River Basin</div>
-                <div className="fs-impact-bar__date">26 AUG 2026 · SAR ANALYSIS</div>
+                {dateLabel && <div className="fs-impact-bar__date">{dateLabel}</div>}
             </div>
 
             <div className="fs-impact-stats">
@@ -938,6 +1119,21 @@ export const ImpactSummary: React.FC<{ floodAreaKm2: number | null }> = ({ flood
         </footer>
     );
 };
+
+// The pipeline does not generate the AI summary itself: the backend only
+// writes `impact_summary` into the analysis state when this endpoint is hit
+// (it also generates it on demand). Called once when an analysis completes so
+// the sidebar can render the live report; failures just leave the fallback.
+async function fetchImpactSummary(analysisId: string): Promise<unknown | null> {
+    try {
+        const res = await fetch(`/backend/analysis/${analysisId}/impact-summary`);
+        if (!res.ok) return null;
+        const body = (await res.json()) as { impact_summary?: unknown };
+        return body.impact_summary ?? body;
+    } catch {
+        return null;
+    }
+}
 
 export const DashboardLayout: React.FC = () => {
     const [date, setDate] = useState('2026-08-26');
@@ -984,6 +1180,13 @@ export const DashboardLayout: React.FC = () => {
                     console.table(results);
                     console.log('acquisitions', next.before, next.after);
                     console.groupEnd();
+                    if (!next.impact_summary) {
+                        void fetchImpactSummary(created.analysisId).then((impact) => {
+                            if (impact) {
+                                setState((prev) => (prev ? { ...prev, impact_summary: impact } : prev));
+                            }
+                        });
+                    }
                     settled = true;
                     break;
                 }
@@ -1002,8 +1205,8 @@ export const DashboardLayout: React.FC = () => {
             if (!settled) {
                 setError(
                     `Analysis ${created.analysisId} did not finish within ` +
-                        `${POLL_TIMEOUT_MS / 60000} min. It may still be running - ` +
-                        'check the backend terminal.'
+                    `${POLL_TIMEOUT_MS / 60000} min. It may still be running - ` +
+                    'check the backend terminal.'
                 );
             }
         } catch (e) {
@@ -1020,6 +1223,9 @@ export const DashboardLayout: React.FC = () => {
         typeof state?.results?.floodAreaKm2 === 'number'
             ? (state.results.floodAreaKm2 as number)
             : null;
+
+    const aoiResult = state?.results?.aoi as { date?: unknown } | undefined;
+    const eventDate = typeof aoiResult?.date === 'string' ? aoiResult.date : null;
 
     return (
         <div className="fs-dashboard">
@@ -1039,12 +1245,12 @@ export const DashboardLayout: React.FC = () => {
                     aoi={aoi}
                     onAoiSelect={setAoi}
                     floodAreaKm2={floodAreaKm2}
+                    eventDate={eventDate}
                     analysisId={analysisId}
                     phase={phase}
                 />
-                <IntelligenceSidebar />
+                <IntelligenceSidebar state={state} />
             </div>
-            <ImpactSummary floodAreaKm2={floodAreaKm2} />
         </div>
     );
 };

@@ -39,3 +39,21 @@ class AnalysisResponse(BaseModel):
     error: Optional[str] = None
     createdAt: datetime
     updatedAt: datetime
+class CriticalLocation(BaseModel):
+    name: str
+    reason: str
+
+
+class ImpactSummary(BaseModel):
+    overview: str
+    infrastructure_impact: str
+    settlement_impact: str
+    critical_locations: List[CriticalLocation] = Field(default_factory=list)
+    recommended_actions: List[str] = Field(default_factory=list)
+    limitations: List[str] = Field(default_factory=list)
+
+
+class ImpactSummaryResponse(BaseModel):
+    analysis_id: str
+    metrics: Dict[str, Any] = Field(default_factory=dict)
+    impact_summary: ImpactSummary

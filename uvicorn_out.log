@@ -1,0 +1,249 @@
+INFO:     127.0.0.1:51135 - "GET /backend/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "POST /backend/analyze HTTP/1.1" 200 OK
+[cdse] event date=2026-06-10 before=2026-04-11 -> 2026-06-09 (60d) after=2026-06-11 -> 2026-07-10 (30d)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[sh] auth host=identity.dataspace.copernicus.eu token ok (expires 1800s)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[sh] search  bbox=83.8750,28.2530,84.1250,28.5030 window=2026-04-11T00:00:00Z/2026-06-10T00:00:00Z -> 19 feature(s)
+[sh]          2026-04-11T12:22:18.885579Z  track=85  S1A_IW_GRDH_1SDV_20260411T122218_20260411T12
+[sh]          2026-04-12T00:27:30.745924Z  track=92  S1A_IW_GRDH_1SDV_20260412T002730_20260412T00
+[sh]          2026-04-16T12:30:29.911986Z  track=158  S1A_IW_GRDH_1SDV_20260416T123029_20260416T12
+[sh]          2026-04-19T00:19:24.620543Z  track=19  S1A_IW_GRDH_1SDV_20260419T001924_20260419T00
+[sh]          2026-04-23T12:22:19.090429Z  track=85  S1A_IW_GRDH_1SDV_20260423T122219_20260423T12
+[sh]          2026-04-24T00:27:30.923948Z  track=92  S1A_IW_GRDH_1SDV_20260424T002730_20260424T00
+[sh]          2026-04-28T12:30:29.703351Z  track=158  S1A_IW_GRDH_1SDV_20260428T123029_20260428T12
+[sh]          2026-05-01T00:19:24.344954Z  track=19  S1A_IW_GRDH_1SDV_20260501T001924_20260501T00
+[sh]          2026-05-05T12:22:21.078668Z  track=85  S1A_IW_GRDH_1SDV_20260505T122221_20260505T12
+[sh]          2026-05-06T00:27:30.286343Z  track=92  S1A_IW_GRDH_1SDV_20260506T002730_20260506T00
+[sh]          2026-05-10T12:30:26.481906Z  track=158  S1A_IW_GRDH_1SDV_20260510T123026_20260510T12
+[sh]          2026-05-13T00:19:23.934653Z  track=19  S1A_IW_GRDH_1SDV_20260513T001923_20260513T00
+[sh]          2026-05-17T12:22:20.761201Z  track=85  S1A_IW_GRDH_1SDV_20260517T122220_20260517T12
+[sh]          2026-05-18T00:27:30.017899Z  track=92  S1A_IW_GRDH_1SDV_20260518T002730_20260518T00
+[sh]          2026-05-22T12:30:25.997904Z  track=158  S1A_IW_GRDH_1SDV_20260522T123025_20260522T12
+[sh]          2026-05-29T12:22:20.100766Z  track=85  S1A_IW_GRDH_1SDV_20260529T122220_20260529T12
+[sh]          2026-05-30T00:27:29.310617Z  track=92  S1A_IW_GRDH_1SDV_20260530T002729_20260530T00
+[sh]          2026-06-03T12:30:25.299496Z  track=158  S1A_IW_GRDH_1SDV_20260603T123025_20260603T12
+[sh]          2026-06-06T00:19:22.854057Z  track=19  S1A_IW_GRDH_1SDV_20260606T001922_20260606T00
+[osm] roads        -> 2,165 features (https://overpass-api.de/api/interpreter)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[sh] search  bbox=83.8750,28.2530,84.1250,28.5030 window=2026-06-11T00:00:00Z/2026-07-11T00:00:00Z -> 11 feature(s)
+[sh]          2026-06-11T00:27:28.676102Z  track=92  S1A_IW_GRDH_1SDV_20260611T002728_20260611T00
+[sh]          2026-06-15T12:30:24.768149Z  track=158  S1A_IW_GRDH_1SDV_20260615T123024_20260615T12
+[sh]          2026-06-18T00:19:22.235663Z  track=19  S1A_IW_GRDH_1SDV_20260618T001922_20260618T00
+[sh]          2026-06-22T12:22:18.834677Z  track=85  S1A_IW_GRDH_1SDV_20260622T122218_20260622T12
+[sh]          2026-06-23T00:27:28.042693Z  track=92  S1A_IW_GRDH_1SDV_20260623T002728_20260623T00
+[sh]          2026-06-25T00:18:41.377457Z  track=19  S1D_IW_GRDH_1SDV_20260625T001841_20260625T00
+[sh]          2026-06-27T12:30:23.848354Z  track=158  S1A_IW_GRDH_1SDV_20260627T123023_20260627T12
+[sh]          2026-06-29T12:21:38.502145Z  track=85  S1D_IW_GRDH_1SDV_20260629T122138_20260629T12
+[sh]          2026-06-30T00:26:47.768165Z  track=92  S1D_IW_GRDH_1SDV_20260630T002647_20260630T00
+[sh]          2026-07-04T12:29:44.230946Z  track=158  S1D_IW_GRDH_1SDV_20260704T122944_20260704T12
+[sh]          2026-07-07T00:18:41.961719Z  track=19  S1D_IW_GRDH_1SDV_20260707T001841_20260707T00
+[cdse] candidates: before=19 (orbits 19, 85, 92, 158) after=11 (orbits 19, 85, 92, 158)
+[cdse] pairs: 209 total -> 52 same-orbit -> 52 mode/pol compatible
+[cdse] SELECTED event=2026-06-10
+[cdse]   BEFORE 2026-06-03T12:30:25.299496Z orbit=158 mode=IW pol=VH,VV
+[cdse]   AFTER  2026-06-15T12:30:24.768149Z orbit=158 mode=IW pol=VH,VV
+[cdse]   rank: tier=mode+pol max_gap=6.5d span=12.0d considered=209 pairs (candidates: 19 before, 11 after)
+[osm] settlements  -> 123 features (https://overpass-api.de/api/interpreter)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] https://overpass-api.de/api/interpreter failed (round 1): HTTP 429
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] https://overpass.kumi.systems/api/interpreter failed (round 1): HTTP 500
+[osm] https://overpass-api.de/api/interpreter failed (round 1): HTTP 429
+[osm] https://overpass.private.coffee/api/interpreter failed (round 1): HTTP 500
+[osm] https://overpass.kumi.systems/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] https://overpass.private.coffee/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] https://maps.mail.ru/osm/tools/overpass/api/interpreter failed (round 1): request failed: The read operation timed out
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[sh] before -> before.tif  grid=2449x2500 valid=6,120,000 (100.0%)  track=158
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] https://maps.mail.ru/osm/tools/overpass/api/interpreter failed (round 1): request failed: The read operation timed out
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] buildings    -> 34,011 features (https://overpass-api.de/api/interpreter)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[osm] hospitals    -> 4 features (https://overpass-api.de/api/interpreter)
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[sh] after  -> after.tif  grid=2449x2500 valid=6,120,000 (100.0%)  track=158
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+[raster] crs=EPSG:4326 shape=2449x2500 res=10.5m before=45.13 dB after=45.13 dB
+[flood] diff_db min=-16.51 max=24.35 mean=-0.00
+[flood] rule: diff_db <= -3.0 dB and after_db <= 43.599 dB (p35 of after scene)
+[flood] flood pixels=463,549 / 6,120,000 valid (7.6%) -> 51.593 km2
+[flood] done in 78.54s
+[flood] AOI [83.87498996406794, 28.253046599347755, 84.12498996406794, 28.503046599347755] date=2026-06-10
+INFO:     127.0.0.1:49824 - "GET /backend/analyze/b097b558-fb42-4241-a042-c7e3b637aac4 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52436 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/polygons HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52433 - "GET /backend/osm/b097b558-fb42-4241-a042-c7e3b637aac4/roads HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52437 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/affected_roads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52434 - "GET /backend/osm/b097b558-fb42-4241-a042-c7e3b637aac4/buildings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52435 - "GET /backend/osm/b097b558-fb42-4241-a042-c7e3b637aac4/settlements HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52436 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/affected_bridges HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52435 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/disconnected_routes HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52435 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/disconnected_settlements HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52436 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/hospitals HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52435 - "GET /backend/floodvit/b097b558-fb42-4241-a042-c7e3b637aac4/hospital_route HTTP/1.1" 404 Not Found
+[raster] preview flood_mask.tif -> flood_mask.png (2449x2500, mask)
+INFO:     127.0.0.1:52435 - "GET /backend/rasters/b097b558-fb42-4241-a042-c7e3b637aac4/flood_mask.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49824 - "GET /backend/analysis/b097b558-fb42-4241-a042-c7e3b637aac4/impact-summary HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "POST /backend/analyze HTTP/1.1" 200 OK
+[cdse] event date=2026-06-10 before=2026-04-11 -> 2026-06-09 (60d) after=2026-06-11 -> 2026-07-10 (30d)
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] roads        -> 2,165 features (https://overpass-api.de/api/interpreter)
+[sh] auth host=identity.dataspace.copernicus.eu token ok (expires 1800s)
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[sh] search  bbox=83.8750,28.2530,84.1250,28.5030 window=2026-04-11T00:00:00Z/2026-06-10T00:00:00Z -> 19 feature(s)
+[sh]          2026-04-11T12:22:18.885579Z  track=85  S1A_IW_GRDH_1SDV_20260411T122218_20260411T12
+[sh]          2026-04-12T00:27:30.745924Z  track=92  S1A_IW_GRDH_1SDV_20260412T002730_20260412T00
+[sh]          2026-04-16T12:30:29.911986Z  track=158  S1A_IW_GRDH_1SDV_20260416T123029_20260416T12
+[sh]          2026-04-19T00:19:24.620543Z  track=19  S1A_IW_GRDH_1SDV_20260419T001924_20260419T00
+[sh]          2026-04-23T12:22:19.090429Z  track=85  S1A_IW_GRDH_1SDV_20260423T122219_20260423T12
+[sh]          2026-04-24T00:27:30.923948Z  track=92  S1A_IW_GRDH_1SDV_20260424T002730_20260424T00
+[sh]          2026-04-28T12:30:29.703351Z  track=158  S1A_IW_GRDH_1SDV_20260428T123029_20260428T12
+[sh]          2026-05-01T00:19:24.344954Z  track=19  S1A_IW_GRDH_1SDV_20260501T001924_20260501T00
+[sh]          2026-05-05T12:22:21.078668Z  track=85  S1A_IW_GRDH_1SDV_20260505T122221_20260505T12
+[sh]          2026-05-06T00:27:30.286343Z  track=92  S1A_IW_GRDH_1SDV_20260506T002730_20260506T00
+[sh]          2026-05-10T12:30:26.481906Z  track=158  S1A_IW_GRDH_1SDV_20260510T123026_20260510T12
+[sh]          2026-05-13T00:19:23.934653Z  track=19  S1A_IW_GRDH_1SDV_20260513T001923_20260513T00
+[sh]          2026-05-17T12:22:20.761201Z  track=85  S1A_IW_GRDH_1SDV_20260517T122220_20260517T12
+[sh]          2026-05-18T00:27:30.017899Z  track=92  S1A_IW_GRDH_1SDV_20260518T002730_20260518T00
+[sh]          2026-05-22T12:30:25.997904Z  track=158  S1A_IW_GRDH_1SDV_20260522T123025_20260522T12
+[sh]          2026-05-29T12:22:20.100766Z  track=85  S1A_IW_GRDH_1SDV_20260529T122220_20260529T12
+[sh]          2026-05-30T00:27:29.310617Z  track=92  S1A_IW_GRDH_1SDV_20260530T002729_20260530T00
+[sh]          2026-06-03T12:30:25.299496Z  track=158  S1A_IW_GRDH_1SDV_20260603T123025_20260603T12
+[sh]          2026-06-06T00:19:22.854057Z  track=19  S1A_IW_GRDH_1SDV_20260606T001922_20260606T00
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] buildings    -> 34,011 features (https://overpass-api.de/api/interpreter)
+[sh] search  bbox=83.8750,28.2530,84.1250,28.5030 window=2026-06-11T00:00:00Z/2026-07-11T00:00:00Z -> 11 feature(s)
+[sh]          2026-06-11T00:27:28.676102Z  track=92  S1A_IW_GRDH_1SDV_20260611T002728_20260611T00
+[sh]          2026-06-15T12:30:24.768149Z  track=158  S1A_IW_GRDH_1SDV_20260615T123024_20260615T12
+[sh]          2026-06-18T00:19:22.235663Z  track=19  S1A_IW_GRDH_1SDV_20260618T001922_20260618T00
+[sh]          2026-06-22T12:22:18.834677Z  track=85  S1A_IW_GRDH_1SDV_20260622T122218_20260622T12
+[sh]          2026-06-23T00:27:28.042693Z  track=92  S1A_IW_GRDH_1SDV_20260623T002728_20260623T00
+[sh]          2026-06-25T00:18:41.377457Z  track=19  S1D_IW_GRDH_1SDV_20260625T001841_20260625T00
+[sh]          2026-06-27T12:30:23.848354Z  track=158  S1A_IW_GRDH_1SDV_20260627T123023_20260627T12
+[sh]          2026-06-29T12:21:38.502145Z  track=85  S1D_IW_GRDH_1SDV_20260629T122138_20260629T12
+[sh]          2026-06-30T00:26:47.768165Z  track=92  S1D_IW_GRDH_1SDV_20260630T002647_20260630T00
+[sh]          2026-07-04T12:29:44.230946Z  track=158  S1D_IW_GRDH_1SDV_20260704T122944_20260704T12
+[sh]          2026-07-07T00:18:41.961719Z  track=19  S1D_IW_GRDH_1SDV_20260707T001841_20260707T00
+[cdse] candidates: before=19 (orbits 19, 85, 92, 158) after=11 (orbits 19, 85, 92, 158)
+[cdse] pairs: 209 total -> 52 same-orbit -> 52 mode/pol compatible
+[cdse] SELECTED event=2026-06-10
+[cdse]   BEFORE 2026-06-03T12:30:25.299496Z orbit=158 mode=IW pol=VH,VV
+[cdse]   AFTER  2026-06-15T12:30:24.768149Z orbit=158 mode=IW pol=VH,VV
+[cdse]   rank: tier=mode+pol max_gap=6.5d span=12.0d considered=209 pairs (candidates: 19 before, 11 after)
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass-api.de/api/interpreter failed (round 1): HTTP 429
+[osm] https://overpass-api.de/api/interpreter failed (round 1): HTTP 429
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass.kumi.systems/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass.kumi.systems/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[sh] before -> before.tif  grid=2449x2500 valid=6,120,000 (100.0%)  track=158
+[osm] https://overpass.private.coffee/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass.private.coffee/api/interpreter failed (round 1): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://maps.mail.ru/osm/tools/overpass/api/interpreter failed (round 1): HTTP 504
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[sh] after  -> after.tif  grid=2449x2500 valid=6,120,000 (100.0%)  track=158
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[raster] crs=EPSG:4326 shape=2449x2500 res=10.5m before=45.13 dB after=45.13 dB
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass-api.de/api/interpreter failed (round 2): HTTP 429
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://overpass.kumi.systems/api/interpreter failed (round 2): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] hospitals    -> 4 features (https://maps.mail.ru/osm/tools/overpass/api/interpreter)
+[osm] https://overpass.private.coffee/api/interpreter failed (round 2): HTTP 500
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] https://maps.mail.ru/osm/tools/overpass/api/interpreter failed (round 2): request failed: The read operation timed out
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+[osm] settlements  -> 123 features (https://overpass-api.de/api/interpreter)
+[flood] diff_db min=-16.51 max=24.35 mean=-0.00
+[flood] rule: diff_db <= -3.0 dB and after_db <= 43.599 dB (p35 of after scene)
+[flood] flood pixels=463,549 / 6,120,000 valid (7.6%) -> 51.593 km2
+[flood] done in 80.68s
+[flood] AOI [83.87498996406794, 28.253046599347755, 84.12498996406794, 28.503046599347755] date=2026-06-10
+INFO:     127.0.0.1:62403 - "GET /backend/analyze/352ea5c2-97fe-4476-9e04-03a3a99fc908 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54587 - "GET /backend/osm/352ea5c2-97fe-4476-9e04-03a3a99fc908/roads HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54588 - "GET /backend/osm/352ea5c2-97fe-4476-9e04-03a3a99fc908/buildings HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54589 - "GET /backend/osm/352ea5c2-97fe-4476-9e04-03a3a99fc908/settlements HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54590 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/polygons HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54591 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/affected_roads HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54589 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/affected_bridges HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54589 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/disconnected_routes HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54591 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/disconnected_settlements HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54589 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/hospitals HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54589 - "GET /backend/floodvit/352ea5c2-97fe-4476-9e04-03a3a99fc908/hospital_route HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:62403 - "GET /backend/analysis/352ea5c2-97fe-4476-9e04-03a3a99fc908/impact-summary HTTP/1.1" 200 OK
+[raster] preview flood_mask.tif -> flood_mask.png (2449x2500, mask)
+INFO:     127.0.0.1:54591 - "GET /backend/rasters/352ea5c2-97fe-4476-9e04-03a3a99fc908/flood_mask.png HTTP/1.1" 200 OK
